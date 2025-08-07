@@ -1,7 +1,10 @@
 import { reactive, effect } from '@vue/reactivity';
 import { define } from './define';
+import { $t } from './utils';
 
 const createApp = (appObj: Record<string, any>) => {
+    console.log($t(appObj));
+    if ($t(appObj) !== 'Object') throw new Error('App definition must be an object');
     const $store = reactive(appObj);
 
     return {
