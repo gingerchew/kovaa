@@ -1,13 +1,15 @@
+import type { ReactiveElement } from "./types";
+
 interface Component {
     disconnected: () => void;
 }
 
 const define = (localName:string, def: () => Component, $store: Record<string, any>) => {
-    customElements.define(localName, class extends HTMLElement {
+    customElements.define(localName, class extends HTMLElement implements ReactiveElement {
         $store = $store;
-        disconnected:null|(() => void) = null;
+        disconnected?: (() => void);
         connectedCallback() {
-            const { disconnected } = def.apply(this);
+            const { disconnected } = def.apply(this) ?? { };
             this.disconnected = disconnected;
         }
         disconnectedCallback() {
