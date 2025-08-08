@@ -125,6 +125,7 @@ Methods are added by adding them from the returned interface.
 createApp({
     HasMethods() {
         this.addEventListener('click', () => {
+            // methods from the returned object can be used in things like event listeners
             this.parsePhoneNumber();
         });
 
@@ -133,10 +134,23 @@ createApp({
                 // ...
             }
         }
+    },
+    HasInternalMethods() {
+        function doAThing() {
+            // but if you want to use a function in the function body
+            // you'll need to define it outside the returned object
+        }
+        // An effect for example would need the function 
+        // defined outside the returned object
+        effect(() => doAThing());
+        return {
+            doAThing
+        }
     }
 }).mount();
 // Now the method is available 
 document.querySelector('has-methods').parsePhoneNumber();
+document.querySelector('has-internal-methods').doAThing();
 ```
 
 ## How do I scope elements?
