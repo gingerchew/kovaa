@@ -102,11 +102,9 @@ function MyButton() {
         this.toggleAttribute('pressed');
     });
 
-    let i = 0;
-
     return {
         attributeChanged(key, oldValue, newValue) {
-            console.log('Is pressed?', newValue);
+            console.log('Is pressed?', newValue === '');
         }
     }
 }
