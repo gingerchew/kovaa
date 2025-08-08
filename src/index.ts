@@ -1,10 +1,10 @@
 import { reactive, effect } from '@vue/reactivity';
 import { define } from './define';
-import { $t } from './utils';
+import { $t, makeLocalName } from './utils';
 
 const createApp = (appObj: Record<string, any>) => {
     if ($t(appObj) !== 'Object') throw new Error('App definition must be an object');
-    
+
     const $store = reactive(appObj);
 
     return {
@@ -12,11 +12,7 @@ const createApp = (appObj: Record<string, any>) => {
             const els = [];
             for (const [key, value] of Object.entries($store)) {
                 if (typeof value === 'function' && key[0].toUpperCase() === key[0]) {
-                    let localName = key.replace(/(.)([A-Z])/g, '$1-$2').toLowerCase();
-                    if (localName.indexOf('-') < 0) {
-                        localName = `x-${localName}`;
-                    }
-                    els.push([localName, value]);
+                    els.push([makeLocalName(key), value]);
                 }
             }
 
