@@ -1,9 +1,9 @@
-# GRWCF (Working Title)
+# Kovaa
 
 A petite-vue like way to create custom elements to create reactive and interactive experiences on the web.
 
 ```js
-import { createApp, effect } from 'grwcf';
+import { createApp, effect } from 'kovaa';
 
 createApp({
     name: 'Jane',
