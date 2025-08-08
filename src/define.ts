@@ -7,6 +7,7 @@ type ComponentDefinition = {
 interface Component {
     disconnected: () => void;
     attributeChanged: (key: string, oldValue: any, newValue: any) => void;
+    [index: string]: Record<string, any>
 }
 
 const define = (localName:string, def: ComponentDefinition & (() => Component), $store: Record<string, any>) => {
@@ -16,11 +17,16 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
             $store = $store;
             #disconnected?: (() => void);
             #attributeChanged?: ((key:string, oldValue: any, newValue: any) => void);
-            
+
             connectedCallback() {
-                const { disconnected, attributeChanged } = def.apply(this) ?? { };
+                const { disconnected, attributeChanged, ...methods } = def.apply(this) ?? { };
                 this.#disconnected = disconnected?.bind(this);
                 this.#attributeChanged = attributeChanged?.bind(this);
+                for (const [key, method] of Object.entries(methods)) {
+                    Object.defineProperty(this, key, {
+                        value: method
+                    })
+                }
             }
 
             attributeChangedCallback(key:string, oldValue: any, newValue: any) {

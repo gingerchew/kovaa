@@ -111,4 +111,23 @@ describe('@createApp', () => {
 
         expect(disconnected).toBeCalled();
     })
+
+    it('should adopt methods and be accessible on the element', () => {
+        document.body.innerHTML = '<has-methods></has-methods>'
+
+        const testing = vi.fn();
+
+        createApp({
+            HasMethods() {
+                return {
+                    testing
+                }
+            }
+        }).mount();
+
+        // @ts-ignore
+        document.querySelector('has-methods')?.testing();
+
+        expect(testing).toBeCalled()
+    })
 });
