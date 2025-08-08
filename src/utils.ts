@@ -8,4 +8,16 @@ const makeLocalName = (s:string, prefix?: string) => {
     return localName.indexOf('-') < 0 ? `x-${localName}` : localName;
 }
 
-export { $t, makeLocalName }
+
+const scopeCache = Object.create(null);
+const parseScope = (element: HTMLElement) => {
+    if (!element.hasAttribute('x-scope')) return;
+    const unparsedScope = element.getAttribute('x-scope')!;
+
+    scopeCache[unparsedScope] ??= new Function(`return (${element.getAttribute('x-scope')})`)();
+    element.removeAttribute('x-scope');
+    
+    return scopeCache[unparsedScope];
+}
+
+export { $t, makeLocalName, parseScope }

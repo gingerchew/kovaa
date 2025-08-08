@@ -1,4 +1,5 @@
 import type { ReactiveElement } from "./types";
+import { parseScope } from "./utils";
 
 type ComponentDefinition = {
     props: string[]
@@ -19,9 +20,13 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
             #attributeChanged?: ((key:string, oldValue: any, newValue: any) => void);
 
             connectedCallback() {
-                const { disconnected, attributeChanged, ...methods } = def.apply(this) ?? { };
+                const scope = parseScope(this);
+
+                const { disconnected, attributeChanged, ...methods } = def.apply<typeof this, (typeof scope)[], Component>(this, [scope]) ?? { };
+
                 this.#disconnected = disconnected?.bind(this);
                 this.#attributeChanged = attributeChanged?.bind(this);
+
                 for (const [key, method] of Object.entries(methods)) {
                     Object.defineProperty(this, key, {
                         value: method

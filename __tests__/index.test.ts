@@ -138,5 +138,19 @@ describe('@createApp', () => {
         }).mount()
         
         expect(customElements.get('prefix-button')).not.toBe(undefined);
+    });
+
+    it('should parse the x-scope attribute and be accessible in function',async () => {
+        document.body.innerHTML = `<scope-parsing x-scope="{name:'Test'}"></scope-parsing>`
+        let $scope;
+        createApp({
+            ScopeParsing(scope: Record<string, string>) {
+                $scope = scope;
+            }
+        }).mount();
+
+        await customElements.whenDefined('scope-parsing');
+
+        expect($scope).toStrictEqual({ name: 'Test' });
     })
 });
