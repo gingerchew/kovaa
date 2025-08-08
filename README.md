@@ -153,9 +153,9 @@ document.querySelector('has-methods').parsePhoneNumber();
 document.querySelector('has-internal-methods').doAThing();
 ```
 
-## How do I scope elements?
+## How do I prefix elements?
 
-While you can scope elements by just giving them a unique name, you might want to consolidate all your custom elements to a single app like this:
+While you can prefix elements by just giving them a unique name, you might want to consolidate all your custom elements to a single app like this:
 
 ```js
 createApp({
@@ -165,7 +165,7 @@ createApp({
     Input() { ... },
     SpecialElement() { ... }
 }).mount();
-// if no $scope is defined and the element is a single word, x- will be used as a prefix
+// if no $prefix is defined and the element is a single word, x- will be used as a prefix
 customElements.get('x-button') // undefined
 customElements.get('my-button') // <my-button>
 customElements.get('my-special-element') // <my-special-element>
@@ -182,12 +182,39 @@ For this, use the `x-scope` attribute in your HTML.
 <my-element x-scope="{idx: 2}"></my-element>
 ```
 
+> Notice that we're not passing a JSON object, but a regular old JavaScript object. This means you can use things like `Map` and `Set` in your scope. Though, you probably wouldn't want to.
+
 Then it will be available as the first argument of your function definition:
 
 ```js
 function MyElement({ idx }) {
     console.log(idx);
 }
+```
+
+This is useful for passing large amounts of server side generated data to an element:
+
+```html
+<employee-card x-scope="{{serverStringifiedJSONObject}}"></employee-card>
+```
+
+```js
+createApp({
+    EmployeeCard({
+        fname,
+        lname,
+        formattedName,
+        age,
+        id,
+        birthday,
+        birthdayInMS,
+        birthdayInS,
+        daysUntilBirthday,
+        hasBirthdayPassed
+    }) {
+        // ...
+    }
+}).mount();
 ```
 
 
