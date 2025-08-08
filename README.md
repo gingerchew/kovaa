@@ -220,5 +220,27 @@ createApp({
 
 ## TODO
 
-- Directives
-- Proper scoping of variables
+- Have data scope work similar to petite-vue
+```js
+createApp({
+    name: 'Jackson',
+    NamePlate(scope) {
+        const { name } = scope;
+        return {
+            name,
+            method() {
+                console.log(this.name); // should be the name from scope, not from app
+            }
+        }
+    }
+})
+```
+- Stop using `$store`, make reactive properties available on `this`
+- Directives on children (requires making a walk function)
+```html
+<button-group>
+    <button @click="methodFoundOnButton">Click to do a thing</button>
+    <button @click="methodThatNeedsAnArgument(3)">Click to do a different thing</button>
+</button-group>
+```
+- Alternatives for v-if/else-if/else
