@@ -71,5 +71,5 @@ describe('@createApp', () => {
         createApp(appDef).mount();
 
         expect(runner).toBeCalled();
-    })
+    });
 });
