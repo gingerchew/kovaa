@@ -216,6 +216,63 @@ createApp({
 }).mount();
 ```
 
+## How do I bind data to attributes? What about event listeners?
+
+Kovaa supports the `:` symbol as a "bind" directive, as well as `x-bind:`, as well as `@` for event listeners.
+
+```html
+<bind-directive>
+    <aside :data-open="isOpen"></aside>
+    <button @click="$store.isOpen = !$store.isOpen">
+</bind-directive>
+```
+
+```js
+createApp({
+    isOpen: false
+    BindDirective() {},
+}).mount();
+```
+
+> Currently this requires an ElementDefinition to work. Unlike petite-vue where creating the app is enough to unlock reactive functionality.
+
+Because Kovaa handles scope differently, you might find inline event handlers more powerful for the time being.
+
+```html
+<bind-directive>
+    <a-child>
+        <button @click="useMethod"></button>
+    </a-child>
+</bind-directive>
+```
+
+```js
+createApp({
+    BindDirective() {
+        return {
+            useMethod() {
+                // do a thing
+            }
+        }
+    },
+    AChild() {
+        return {};
+    }
+}).mount();
+```
+
+The example above will error. This is because the context/store that is being used on the button is the context from `<a-child>` not `<bind-directive>`.
+
+> There are plans to fix this in the future, but it would require a deep knowledge of how scope works in petite-vue and finding a way to apply it to Kovaa.
+
+## What other vue directives are supported?
+
+Currently only `:`, `x-bind`, and `@` are supported. There are plans to continue to add directives in the future to mimic petite-vue's capabilities.
+
+## What about custom directives?
+
+Custom directives are not supported currently. This will likely come after all the existing petite-vue directives are added.
+
 
 ## TODO
 

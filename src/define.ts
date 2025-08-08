@@ -1,5 +1,6 @@
 import type { ReactiveElement } from "./types";
-import { parseScope } from "./utils";
+import { evaluate } from "./utils";
+import { walk, KOVAA_SYMBOL } from "./walk";
 
 type ComponentDefinition = {
     props: string[]
@@ -18,20 +19,24 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
             $store = $store;
             #disconnected?: (() => void);
             #attributeChanged?: ((key:string, oldValue: any, newValue: any) => void);
+            ac = new AbortController();
+            [KOVAA_SYMBOL] = true;
 
             connectedCallback() {
-                const scope = parseScope(this);
-
+                const scope = evaluate(this.getAttribute('x-scope') ?? '{}', $store);
                 const { disconnected, attributeChanged, ...methods } = def.apply<typeof this, (typeof scope)[], Component>(this, [scope]) ?? { };
-
+                
+                
                 this.#disconnected = disconnected?.bind(this);
                 this.#attributeChanged = attributeChanged?.bind(this);
-
+                
                 for (const [key, method] of Object.entries(methods)) {
                     Object.defineProperty(this, key, {
                         value: method
                     })
                 }
+
+                walk(this, $store, this);
             }
 
             attributeChangedCallback(key:string, oldValue: any, newValue: any) {
@@ -39,6 +44,11 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
             }
 
             disconnectedCallback() {
+                // if you use directive to apply event listeners
+                // they will all have this signal attached to them
+                // and when the element is removed from the dom,
+                // they will be cleaned up
+                this.ac.abort();
                 this.#disconnected?.();
             }
         });

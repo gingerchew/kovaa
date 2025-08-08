@@ -153,4 +153,81 @@ describe('@createApp', () => {
 
         expect($scope).toStrictEqual({ name: 'Test' });
     })
+
+    it('should support bind directive', () => {
+        document.body.innerHTML = `<bind-directive>
+            <span x-bind:data-name="name"></span>
+            <div :data-name="name"></div>
+        </bind-directive>`
+
+        createApp({
+            name: 'Jill',
+            BindDirective() {
+                return {
+                    changeName() {
+                        this.$store.name = 'Jane';
+                    }
+                }
+            }
+        }).mount();
+
+        const span = document.querySelector('span')!;
+        const div = document.querySelector('div')!;
+        
+        expect(span.dataset.name).toBe('Jill');
+        expect(div.dataset.name).toBe('Jill')
+        // @ts-ignore
+        span?.parentElement.changeName();
+        expect(span.dataset.name).toBe('Jane');
+        expect(div.dataset.name).toBe('Jane');
+    });
+
+    it('should support event listeners', () => {
+        document.body.innerHTML = `<on-directive>
+            <button @click="clickHandler"></button>
+            <input @input="inputHandler" />
+            <button class="global-button" @click="globalClickHandler"></button>
+            <input class="global-input" @input="globalInputHandler" />
+            <button class="inline-button" @click="$store.i += 1"></button>
+        </on-directive>`
+
+        const input = document.querySelector('input')!;
+        const button = document.querySelector('button')!;
+        const globalBtn = document.querySelector<HTMLButtonElement>('.global-button')!;
+        const globalInput = document.querySelector('.global-input')!;
+        const inlineBtn = document.querySelector<HTMLButtonElement>('.inline-button')!;
+
+        const clickHandler = vi.fn();
+        const inputHandler = vi.fn();
+        const globalInputHandler = vi.fn();
+        const globalClickHandler = vi.fn();
+        let i = 0;
+        createApp({
+            set i(v) {
+                i = v;
+            },
+            get i() {
+                return i;
+            },
+            globalClickHandler,
+            globalInputHandler,
+            OnDirective() {
+                return {
+                    clickHandler,
+                    inputHandler
+                }
+            }
+        }).mount();
+
+        input.dispatchEvent(new Event('input'));
+        button.click();
+        expect(clickHandler).toBeCalled();
+        expect(inputHandler).toBeCalled();
+        globalBtn.click();
+        globalInput.dispatchEvent(new Event('input'));
+        expect(globalClickHandler).toBeCalled();
+        expect(globalInputHandler).toBeCalled();
+        inlineBtn.click();
+        expect(i).toBe(1);
+    })
 });

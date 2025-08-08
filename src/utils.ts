@@ -1,3 +1,5 @@
+import type { ReactiveElement } from "./types";
+
 const $t = (obj:unknown) => Object.prototype.toString.call(obj).slice(8, -1);
 
 const makeLocalName = (s:string, prefix?: string) => {
@@ -9,15 +11,25 @@ const makeLocalName = (s:string, prefix?: string) => {
 }
 
 
-const scopeCache = Object.create(null);
-const parseScope = (element: HTMLElement):Record<string, any> => {
-    if (!element.hasAttribute('x-scope')) return {};
-    const unparsedScope = element.getAttribute('x-scope')!;
-
-    scopeCache[unparsedScope] ??= new Function(`return (${element.getAttribute('x-scope')})`)();
-    element.removeAttribute('x-scope');
-    
-    return scopeCache[unparsedScope];
+const fnCache = Object.create(null);
+const toFunction = (exp:string) => {
+    try {
+        return new Function("$store", "$context", "$el", `${exp}`);
+    } catch(error) {
+        console.error(`${(error as Error).message} in expression: ${exp}`)
+        return () => {}
+    }
 }
 
-export { $t, makeLocalName, parseScope }
+const evaluate = (exp: string, $store: Record<string, any>, $el?: HTMLElement, $context?: ReactiveElement) => execute(`return(${exp})`, $store, $el, $context);
+
+const execute = (exp: string, $store: Record<string, any>, $el?: HTMLElement, $context?: ReactiveElement) => {
+    const fn = fnCache[exp] ||= toFunction(exp);
+    try {
+        return fn($store, $context, $el);
+    } catch(error) {
+        console.error(error);
+    }
+}
+
+export { $t, makeLocalName, evaluate, toFunction }
