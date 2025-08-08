@@ -161,9 +161,25 @@ customElements.get('my-special-element') // <my-special-element>
 
 > `customElements.get` will return the class that creates the element matching a given local name, not `<local-name>`.
 
+## What if I want to get instance specific data to the element?
+
+For this, use the `x-scope` attribute in your HTML.
+
+```html
+<my-element x-scope="{idx: 1}"></my-element>
+<my-element x-scope="{idx: 2}"></my-element>
+```
+
+Then it will be available as the first argument of your function definition:
+
+```js
+function MyElement({ idx }) {
+    console.log(idx);
+}
+```
+
 
 ## TODO
 
 - Directives
 - Proper scoping of variables
-- pass data to elements with `scope="{obj: value}"`
