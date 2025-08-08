@@ -130,4 +130,13 @@ describe('@createApp', () => {
 
         expect(testing).toBeCalled()
     })
+
+    it('should handle scoping', async () => {
+        createApp({
+            $scope: 'scope',
+            Button() {}
+        }).mount()
+        
+        expect(customElements.get('scope-button')).not.toBe(undefined);
+    })
 });
