@@ -10,9 +10,12 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
-      name: 'grwcf',
+      name: 'kovaa',
       // the proper extensions will be added
-      fileName: 'grwcf',
+      fileName: 'kovaa',
     },
   },
+  define: {
+    'process.env.NODE_ENV': '"production"'
+  }
 })

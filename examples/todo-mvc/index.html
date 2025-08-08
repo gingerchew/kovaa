@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TODO MVC</title>
+</head>
+<body>
+    <label for="todo-input">Add Item To Todo List</label>
+    <input id="todo-input" />
+    <button command="--add" commandfor="todoList">Add Item</button>
+    <todo-list id="todoList">
+    </todo-list>
+    <script type="module">
+        import { createApp, effect } from '../../dist/grwcf.js';
+        import 'https://esm.sh/invokers-polyfill';
+        function TodoItem({ title }) {
+            // need way to do attribute changed stuff
+            effect(() => {
+                this.innerHTML = `
+                    <span>${title}</span>
+                    <button>Complete?</button>
+                `
+            });
+            const ac = new AbortController();
+            this.addEventListener('click', () => this.toggleAttribute('completed'), { signal: ac.signal });
+            return {
+                attributeChanged(key, _oldValue, isCompleted) {
+                    console.log({ key, _oldValue, isCompleted })
+                    if (isCompleted === '') {
+                        this.$store.todoItems = this.$store.todoItems.filter(item => item.title !== title);
+                    }
+                },
+                disconnected() {
+                    ac.abort();
+                }
+            }
+        }
+
+        TodoItem.props = ['completed'];
+
+        function TodoList() {
+            const as = new AbortController();
+
+            this.input = document.querySelector('#todo-input');
+
+            this.addEventListener('command', ({ command }) => {
+                if (command === '--add') {
+                    this.$store.todoItems.push({
+                        title: this.input.value,
+                        completed: false,
+                    });
+                    this.input.value = '';
+                }
+            }, { signal: as.signal });
+
+            effect(() => {
+                const frag = document.createDocumentFragment();
+                for(const item of this.$store.todoItems) {
+                    const todoItem = document.createElement('todo-item');
+                    todoItem.setAttribute('x-scope', `{title:"${item.title}"}`);
+                    frag.append(todoItem);
+                }
+                this.innerHTML = '';
+                this.append(frag);
+            });
+
+            return {
+                disconnected() {
+                    as.abort();
+                }
+            }
+        }
+
+        createApp({
+            todoItems: [],
+            TodoList,
+            TodoItem,
+        }).mount();
+    </script>
+</body>
+</html>
