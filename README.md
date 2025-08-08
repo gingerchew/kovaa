@@ -29,7 +29,7 @@ createApp({
 <x-output></x-output>
 ```
 
-## Differences between Petite-Vue and GRWCF
+## Differences between Petite-Vue and Kovaa
 
 - Directives are not implemented yet
 - Because it is built on web components, all elements are registered in the global scope. Duplicate names will lead to errors.
@@ -57,9 +57,8 @@ createApp({
 })
 ```
 
-
 ## How to define a custom element?
-Elements are any function passed to the app object that start with a capital letter:
+Elements are defined by passing any function to the app object and starting it with a capital letter:
 ```js
 createApp({
     thisIsAFunction() { ... },
@@ -67,7 +66,7 @@ createApp({
     // <this-is-an-element>
 })
 ```
-If the component function is a single word like `Button` or `Input`, GRWCF will add a `x-` to the start of the element name, as seen in the first example.
+If the component function is a single word like `Button` or `Input`, Kovaa will add a `x-` to the start of the element name, as seen in the first example.
 
 The function runs in the `connectedCallback` of the custom element, and returns an interface:
 ```ts
@@ -84,9 +83,9 @@ function MyButton() {
 Currently the returned interface has little going on. It will be expanded to be more useful as the library develops.
 
 ## How do reactive properties work?
-To make reactive properties easier, GRWCF uses `@vue/reactivity` as a familiar solution. We reexport `reactive` and `effect`, and anything in the app object will be added to the magic `$store` variable.
+To make reactive properties easier, Kovaa uses `@vue/reactivity` as a familiar solution. We reexport `reactive` and `effect`, and anything in the app object will be added to the magic `$store` variable.
 
-> **What is so magic about $store?** Nothing. The only thing magic about it is that it is included as a property in each element defined in the `createApp` function.
+> **What is so magic about $store?** Nothing. The only thing magic about it is that it is included as a property in each element defined in the `createApp` function. They all point to the app object passed into the `createApp` function.
 
 ## How do I affect the DOM?
 
