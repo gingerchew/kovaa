@@ -72,4 +72,43 @@ describe('@createApp', () => {
 
         expect(runner).toBeCalled();
     });
+
+    it('should run attributeChanged callback', () => {
+        document.body.innerHTML = `<attribute-changed></attribute-changed>`;
+        
+        const attributeChanged = vi.fn();
+        
+        function AttributeChanged() {
+            return {
+                attributeChanged
+            }
+        }
+        AttributeChanged.props = ['test'];
+        
+        createApp({
+            AttributeChanged
+        }).mount();
+
+
+        document.querySelector('attribute-changed')?.toggleAttribute('test');
+
+        expect(attributeChanged).toBeCalled();
+    });
+
+    it('should run disconnected callback', () => {
+        document.body.innerHTML = `<x-disconnected></x-disconnected>`;
+
+        const disconnected = vi.fn();
+        function Disconnected() {
+            return { disconnected };
+        }
+
+        createApp({
+            Disconnected
+        }).mount();
+
+        document.querySelector('x-disconnected')?.remove();
+
+        expect(disconnected).toBeCalled();
+    })
 });
