@@ -91,3 +91,59 @@ To make reactive properties easier, GRWCF uses `@vue/reactivity` as a familiar s
 ## How do I affect the DOM?
 
 Because your functions are just custom elements, you can interact with the dom using `this` keyword for operations scoped to your element, or querying the dom directly using `document`.
+
+## How do I react to changes in attributes?
+
+Because `observedAttributes` is a `static` getter, we have to define the props we want to observe on the function definition.
+
+```js
+function MyButton() {
+    this.addEventListener('click', () => {
+        this.toggleAttribute('pressed');
+    });
+
+    let i = 0;
+
+    return {
+        attributeChanged(key, oldValue, newValue) {
+            console.log('Is pressed?', newValue);
+        }
+    }
+}
+MyButton.props = ['pressed']
+
+createApp({
+    MyButton
+}).mount();
+```
+
+When the custom element is defined, it will look if the `props` key is defined on the function and use that. When an attribute changes, it will use the `attributeChanged` method on the returned interface.
+
+## How do I add methods to my custom element?
+
+Methods are added by adding them from the returned interface.
+
+```js
+createApp({
+    HasMethods() {
+        this.addEventListener('click', () => {
+            this.parsePhoneNumber();
+        });
+
+        return {
+            parsePhoneNumber() {
+                // ...
+            }
+        }
+    }
+}).mount();
+// Now the method is available 
+document.querySelector('has-methods').parsePhoneNumber();
+```
+
+## TODO
+
+- Directives
+- Proper scoping of variables
+- pass data to elements with `scope="{obj: value}"`
+- custom scoping of element names with `$scope`
