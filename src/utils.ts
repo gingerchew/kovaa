@@ -10,8 +10,8 @@ const makeLocalName = (s:string, prefix?: string) => {
 
 
 const scopeCache = Object.create(null);
-const parseScope = (element: HTMLElement) => {
-    if (!element.hasAttribute('x-scope')) return;
+const parseScope = (element: HTMLElement):Record<string, any> => {
+    if (!element.hasAttribute('x-scope')) return {};
     const unparsedScope = element.getAttribute('x-scope')!;
 
     scopeCache[unparsedScope] ??= new Function(`return (${element.getAttribute('x-scope')})`)();
