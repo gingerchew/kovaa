@@ -141,9 +141,29 @@ createApp({
 document.querySelector('has-methods').parsePhoneNumber();
 ```
 
+## How do I scope elements?
+
+While you can scope elements by just giving them a unique name, you might want to consolidate all your custom elements to a single app like this:
+
+```js
+createApp({
+    $prefix: 'my',
+    Button() { ... },
+    Form() { ... },
+    Input() { ... },
+    SpecialElement() { ... }
+}).mount();
+// if no $scope is defined and the element is a single word, x- will be used as a prefix
+customElements.get('x-button') // undefined
+customElements.get('my-button') // <my-button>
+customElements.get('my-special-element') // <my-special-element>
+```
+
+> `customElements.get` will return the class that creates the element matching a given local name, not `<local-name>`.
+
+
 ## TODO
 
 - Directives
 - Proper scoping of variables
 - pass data to elements with `scope="{obj: value}"`
-- custom scoping of element names with `$scope`

@@ -131,12 +131,12 @@ describe('@createApp', () => {
         expect(testing).toBeCalled()
     })
 
-    it('should handle scoping', async () => {
+    it('should handle prefixing', async () => {
         createApp({
-            $scope: 'scope',
+            $prefix: 'prefix',
             Button() {}
         }).mount()
         
-        expect(customElements.get('scope-button')).not.toBe(undefined);
+        expect(customElements.get('prefix-button')).not.toBe(undefined);
     })
 });

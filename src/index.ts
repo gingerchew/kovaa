@@ -4,7 +4,7 @@ import { $t, makeLocalName } from './utils';
 
 const createApp = (appObj: Record<string, any>) => {
     if ($t(appObj) !== 'Object') throw new Error('App definition must be an object');
-    const { $scope } = appObj;
+    const { $prefix } = appObj;
     const $store = reactive(appObj);
 
     return {
@@ -12,7 +12,7 @@ const createApp = (appObj: Record<string, any>) => {
             const els = [];
             for (const [key, value] of Object.entries($store)) {
                 if (typeof value === 'function' && key[0].toUpperCase() === key[0]) {
-                    els.push([makeLocalName(key, $scope), value]);
+                    els.push([makeLocalName(key, $prefix), value]);
                 }
             }
 
