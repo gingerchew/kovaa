@@ -229,5 +229,68 @@ describe('@createApp', () => {
         expect(globalInputHandler).toBeCalled();
         inlineBtn.click();
         expect(i).toBe(1);
+    });
+
+    it('should adopt innerHTML from template elements', () => {
+        document.body.innerHTML = `<has-tpl></has-tpl><template id="tpl">true</template><has-tpl-child><template id="child">true</template></has-tpl-child>`;
+
+        createApp({
+            HasTpl() {
+                return {
+                    $tpl: '#tpl'
+                }
+            },
+            HasTplChild() {
+                return {
+                    $tpl: '#child'
+                }
+            }
+        }).mount();
+
+        expect(document.querySelector('has-tpl')?.textContent).toBe('true');
+        expect(document.querySelector('has-tpl-child')?.textContent).toBe('true');
+    })
+
+    it('should support inline html $tpl', () => {
+        document.body.innerHTML = '<has-inline-html></has-inline-html><has-inline-text></has-inline-text>';
+
+        createApp({
+            HasInlineHtml() {
+                return {
+                    $tpl: '<span>true</span>'
+                }
+            },
+            HasInlineText() {
+                return {
+                    $tpl: 'true'
+                }
+            }
+        }).mount();
+
+        expect(document.querySelector('has-inline-html')?.textContent).toBe('true');
+        expect(document.querySelector('has-inline-html')?.children.length).toBe(1);
+        expect(document.querySelector('has-inline-text')?.textContent).toBe('true');
+    });
+
+    it('should have access to $store in $tpl', () => {
+        document.body.innerHTML = `<use-store-for-text></use-store-for-text><use-store-for-tpl></use-store-for-tpl><template id="test">true</template>`;
+
+        createApp({
+            tpl: '#test',
+            text: 'true',
+            UseStoreForText() {
+                return {
+                    $tpl: this.$store.text
+                }
+            },
+            UseStoreForTpl() {
+                return {
+                    $tpl: this.$store.tpl
+                }
+            }
+        }).mount();
+
+        expect(document.querySelector('use-store-for-text')?.textContent).toBe('true');
+        expect(document.querySelector('use-store-for-tpl')?.textContent).toBe('true');
     })
 });
