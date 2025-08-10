@@ -1,5 +1,5 @@
 import type { ReactiveElement } from "./types";
-import { evaluate } from "./utils";
+import { $t, evaluate } from "./utils";
 import { walk, KOVAA_SYMBOL } from "./walk";
 
 type ComponentDefinition = {
@@ -7,9 +7,51 @@ type ComponentDefinition = {
 }
 
 interface Component {
+    $tpl: null|string|HTMLTemplateElement|DocumentFragment;
+    connected: () => void;
     disconnected: () => void;
     attributeChanged: (key: string, oldValue: any, newValue: any) => void;
-    [index: string]: Record<string, any>
+}
+
+const $ = (el:ReactiveElement) => document.querySelector.bind(el);
+const $$ = (el:ReactiveElement) => (selector:string) => Array.from(document.querySelectorAll.apply(el, [selector]));
+
+const createFromTemplate = (str: string) => {
+    const tmp = document.createElement('template');
+    tmp.innerHTML = str;
+    return tmp;
+}
+
+const processDefinition = (def: Component, el: ReactiveElement) => {
+    // If there is a tpl, 
+    if ('$tpl' in def) {
+        if ($t(def.$tpl) === 'String') {
+            let tmp:HTMLTemplateElement;
+            try {
+                tmp = (el.querySelector<HTMLTemplateElement>(def.$tpl as string)! ?? document.querySelector<HTMLTemplateElement>(def.$tpl as string)!);
+            } catch(e) {
+                // if querySelector fails, assume def.$tpl is an html string
+                tmp = createFromTemplate(def.$tpl as string);
+            }
+
+            // if tmp is still null, assume it is a text string
+            if (tmp === null) {
+                import.meta.env.DEV && console.warn(`Could not find element with selector ${def.$tpl} falling back to using as template`);
+                tmp = createFromTemplate(def.$tpl as string);
+            }
+            
+            def.$tpl = tmp.content.cloneNode(true) as DocumentFragment;
+        } 
+        if (def.$tpl instanceof HTMLTemplateElement) {
+            def.$tpl = def.$tpl.content.cloneNode(true) as DocumentFragment;
+        }
+    } else {
+        Object.defineProperty(def, '$tpl', {
+            value: null
+        });
+    }
+
+    return def;
 }
 
 const define = (localName:string, def: ComponentDefinition & (() => Component), $store: Record<string, any>) => {
@@ -17,26 +59,39 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
         customElements.define(localName, class extends HTMLElement implements ReactiveElement {
             static get observedAttributes() { return def.props }
             $store = $store;
-            #disconnected?: (() => void);
-            #attributeChanged?: ((key:string, oldValue: any, newValue: any) => void);
+            #connected?: () => void;
+            #disconnected?: () => void;
+            #attributeChanged?: (key:string, oldValue: any, newValue: any) => void;
             ac = new AbortController();
             [KOVAA_SYMBOL] = true;
+            constructor() {
+                super();
 
-            connectedCallback() {
                 const scope = evaluate(this.getAttribute('x-scope') ?? '{}', $store);
-                const { disconnected, attributeChanged, ...methods } = def.apply<typeof this, (typeof scope)[], Component>(this, [scope]) ?? { };
+                const { $tpl, connected, disconnected, attributeChanged, ...methods } = processDefinition(def.apply<typeof this, (typeof scope)[], Component>(this, [scope, $, $$]) ?? { }, this);
                 
                 
+                this.#connected = connected?.bind(this);
                 this.#disconnected = disconnected?.bind(this);
                 this.#attributeChanged = attributeChanged?.bind(this);
-                
+
                 for (const [key, method] of Object.entries(methods)) {
                     Object.defineProperty(this, key, {
                         value: method
                     })
                 }
-
+    
+                if ($tpl) {
+                    this.append($tpl);
+                }
+    
+                // parse before running connected
                 walk(this, $store, this);
+    
+            }
+
+            connectedCallback() {
+                this.#connected?.();
             }
 
             attributeChangedCallback(key:string, oldValue: any, newValue: any) {

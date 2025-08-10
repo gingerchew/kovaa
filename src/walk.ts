@@ -36,11 +36,19 @@ const processDirective = (el:HTMLElement, fullName:string, value: string, $store
     }
 }
 
-const walk = (el:HTMLElement, $store: Record<string, any>, context: ReactiveElement) => {
+const isReactiveElement = (el:unknown): el is ReactiveElement => el instanceof HTMLElement && KOVAA_SYMBOL in el;
+
+const walk = (el:HTMLElement, $store: Record<string, any>, context?: ReactiveElement) => {
     if (el.nodeType !== 1) return;
+    
     // don't walk into another kovaa element
     if (!Object.is(el, context) && KOVAA_SYMBOL in el) return;
-
+    
+    if (!context && isReactiveElement(el)) {
+        context = el;
+    }
+    // @TODO: this code appeases typescript, need to remove it eventually
+    context = context as ReactiveElement;
     for (const attr of el.attributes) {
         const { name, value } = attr;
         processDirective(el, name, value, $store, context);
