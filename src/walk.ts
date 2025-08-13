@@ -112,6 +112,13 @@ const model = (el: HTMLElement, _fullName: string, value:string, $store:Record<s
     }
 }
 
+const show = (el:HTMLElement, _fullName:string, value:string, $store:Record<string, any>, _context: ReactiveElement) => {
+    let initial = el.style.display;
+    effect(() => {
+        el.style.display = $store[value] ? initial : 'none';
+    })
+}
+
 const processDirective = (el:HTMLElement, fullName:string, value: string, $store: Record<string, any>, context:ReactiveElement) => {
     if (fullName[0] === ':' || fullName.match(/^x-bind:/)) {
         bind(el, fullName.split(':')[1], value, $store);
@@ -124,6 +131,9 @@ const processDirective = (el:HTMLElement, fullName:string, value: string, $store
     }
     if (fullName.match(/^x-model$/)) {
         model(el, fullName, value, $store, context);
+    }
+    if (fullName.match(/^x-show$/)) {
+        show(el, fullName, value, $store, context);
     }
 }
 

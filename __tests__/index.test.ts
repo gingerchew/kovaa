@@ -430,5 +430,30 @@ describe('@createApp', () => {
         // @ts-ignore
         document.querySelector('radio-wrapper')?.click();
         expect(radio).toBe('2');
+    });
+
+    it('should toggle display with show directive', () => {
+        document.body.innerHTML = `<show-directive>
+            <div class="false" x-show="startsFalse"></div>
+            <div class="true" x-show="startsTrue" style="display: flex;"></div>
+        </show-directive>`
+
+        createApp({
+            startsFalse: false,
+            startsTrue: true,
+            ShowDirective() {
+                this.addEventListener('click', () => {
+                    this.$store.startsFalse = true;
+                    this.$store.startsTrue = false;
+                });
+            }
+        }).mount();
+        const f = document.querySelector<HTMLDivElement>('.false');
+        const t = document.querySelector<HTMLDivElement>('.true');
+        expect(f!.style.display).toBe('none');
+        expect(t!.style.display).toBe('flex');
+        document.querySelector('show-directive')?.click();
+        expect(f?.style.display).toBe('');
+        expect(t!.style.display).toBe('none');
     })
 });
