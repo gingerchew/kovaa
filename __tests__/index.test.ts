@@ -408,5 +408,27 @@ describe('@createApp', () => {
         expect(check.length).toBe(1);
     });
 
-    it.todo('should model radio inputs')
+    it('should model radio inputs', () => {
+        document.body.innerHTML = `<radio-wrapper>
+            <input type="radio" value="1" x-model="radio" selected />
+            <input type="radio" value="2" x-model="radio" />
+        </radio-wrapper>`;
+
+        let radio:string = '1';
+
+        createApp({
+            radio,
+            RadioWrapper() {
+                effect(() => radio = this.$store.radio);
+                this.addEventListener('click', () => {
+                    this.querySelector('input:last-child')?.click();
+                });
+            }
+        }).mount();
+
+        expect(radio).toBe('1');
+        // @ts-ignore
+        document.querySelector('radio-wrapper')?.click();
+        expect(radio).toBe('2');
+    })
 });

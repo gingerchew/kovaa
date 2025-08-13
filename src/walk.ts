@@ -88,7 +88,18 @@ const model = (el: HTMLElement, _fullName: string, value:string, $store:Record<s
                 oldValue = input.value
             });
         } else if (input.type === 'radio') {
-            
+            input.addEventListener('change', () => {
+                assign(input.value);
+            });
+
+            let oldValue:any;
+            effect(() => {
+                const val = $store[value];
+                if (oldValue !== val) {
+                    input.checked = val === input.value;
+                }
+                oldValue = input.value;
+            });
         } else {
             input.addEventListener('input', () => {
                 assign(input.value);
