@@ -292,5 +292,121 @@ describe('@createApp', () => {
 
         expect(document.querySelector('use-store-for-text')?.textContent).toBe('true');
         expect(document.querySelector('use-store-for-tpl')?.textContent).toBe('true');
-    })
+    });
+
+    it('should maintain proper context across elements', () => {
+        document.body.innerHTML = `<parent-el x-scope="{name:'Jane'}">
+            <child-el x-scope="{name:'Jill'}">
+                <span :data-name="name"></span>
+            </child-el>
+            <div :data-name="name"></span>
+        </parent-el>`;
+
+        /**
+         * Need to figure out how to adjust scoping so that the store inside of the individual components
+         * does not cross pollute.
+         * 
+         * Need to think on this
+         */
+        createApp({
+            ParentEl({ name }) {
+                this.$store.name = name;
+            },
+            ChildEl({ name }) {
+                this.$store.name = name;
+            },
+        }).mount();
+
+        const span = document.querySelector('span')!;
+        const div = document.querySelector('div')!;
+        expect(div.dataset.name).toBe('Jane');
+        expect(span.dataset.name).toBe('Jill');
+    });
+
+    it('should model select elements', () => {
+        document.body.innerHTML = `<select-wrapper>
+            <select x-model="name">
+                <option>Jane</option>
+                <option>Jill</option>
+            </select>
+        </select-wrapper>`
+
+        let name = '';
+
+        createApp({
+            name: 'Jill',
+            SelectWrapper() {
+                effect(() => {
+                    name = this.$store.name;
+                })
+                this.addEventListener('click', () => {
+                    this.querySelector('select').options[0].selected = true;
+                    this.querySelector('select').dispatchEvent(new Event('change'));
+                })
+            }
+        }).mount();
+
+
+        expect(name).toBe('Jill');
+        // @ts-ignore
+        document.querySelector('select-wrapper')!.click();
+        
+        expect(name).toBe('Jane');
+    });
+
+    it('should model input elements', () => {
+        document.body.innerHTML = `<input-wrapper>
+            <input x-model="name" />
+        </input-wrapper>`
+
+        let name = '';
+
+        createApp({
+            name: 'Jill',
+            InputWrapper() {
+                effect(() => {
+                    name = this.$store.name;
+                });
+                this.addEventListener('click', () => {
+                    this.querySelector('input').value = 'Jane';
+                    this.querySelector('input').dispatchEvent(new Event('input'));
+                });
+            }
+        }).mount();
+
+        expect(name).toBe('Jill');
+        // @ts-ignore
+        document.querySelector('input-wrapper')!.click();
+        expect(name).toBe('Jane');
+    });
+    // @TODO: Make sure this supports individual values as well
+    // @TODO: Make sure this isn't as rigid
+    it('should model checkbox inputs', () => {
+        document.body.innerHTML = `<checkbox-wrapper>
+            <input type="checkbox" name="check" value="1" x-model="check">
+            <input type="checkbox" name="check" value="2" x-model="check">
+            <input type="checkbox" name="check" value="3" x-model="check">
+        </checkbox-wrapper>`;
+
+        let check = [];
+
+        createApp({
+            check: [],
+            CheckboxWrapper() {
+                effect(() => check = this.$store.check);
+                this.addEventListener('click', () => {
+                    const secondCheck = this.querySelector('[value="2"]')!;
+                    secondCheck.checked = true;
+                    secondCheck.dispatchEvent(new Event('change'));
+                });
+            }
+        }).mount();
+
+        expect(check.length).toBe(0);
+        // @ts-ignore
+        document.querySelector('checkbox-wrapper')!.click();
+        expect(check.length).toBe(1);
+    });
+
+    it.todo('should model radio inputs')
 });
