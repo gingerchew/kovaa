@@ -1,10 +1,10 @@
 import { effect } from '@vue/reactivity';
-import type { ReactiveElement } from './types';
+import type { $Store, ReactiveElement } from './types';
 import { evaluate, toFunction } from './utils';
 
 export const KOVAA_SYMBOL = Symbol()
 
-const walkChildren = (children: HTMLCollection, $store: Record<string, any>, context:ReactiveElement) => {
+const walkChildren = (children: HTMLCollection, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
     for (let i = 0;i< children.length;i+=1) {
         walk(children[i] as HTMLElement, $store, context);
     }
@@ -14,7 +14,7 @@ const bind = (el: HTMLElement, attrName: string, value: string, $store: Record<s
     effect(() => el.setAttribute(attrName, $store[value]));
 }
 
-const on = (el: HTMLElement, eventName: string, methodOrFunction: string, $store: Record<string, any>, context:ReactiveElement) => {
+const on = (el: HTMLElement, eventName: string, methodOrFunction: string, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
     // @ts-ignore
     const handler = methodOrFunction in context && typeof context[methodOrFunction] === 'function' ? 
         // @ts-ignore
@@ -34,7 +34,7 @@ const xif = (el: HTMLElement, fullName:string, value:string, $store:Record<strin
 }
 */
 
-const model = (el: HTMLElement, _fullName: string, value:string, $store:Record<string, any>, context:ReactiveElement) => {
+const model = (el: HTMLElement, _fullName: string, value:string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
     const assign = evaluate(`(val) => $store.${value} = val`, $store, el, context);
     if (el.localName === 'select') {
         const sel = el as HTMLSelectElement;
@@ -112,14 +112,14 @@ const model = (el: HTMLElement, _fullName: string, value:string, $store:Record<s
     }
 }
 
-const show = (el:HTMLElement, _fullName:string, value:string, $store:Record<string, any>, _context: ReactiveElement) => {
+const show = (el:HTMLElement, _fullName:string, value:string, $store:Record<string, any>, _context: ReactiveElement<typeof $store>) => {
     let initial = el.style.display;
     effect(() => {
         el.style.display = $store[value] ? initial : 'none';
     })
 }
 
-const text = (el:HTMLElement, _fullName:string, value:string, $store:Record<string, any>, context:ReactiveElement) => {
+const text = (el:HTMLElement, _fullName:string, value:string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
     effect(() => {
         let parsedValue;
         try {
@@ -134,7 +134,7 @@ const text = (el:HTMLElement, _fullName:string, value:string, $store:Record<stri
     });
 }
 
-const processDirective = (el:HTMLElement, fullName:string, value: string, $store: Record<string, any>, context:ReactiveElement) => {
+const processDirective = (el:HTMLElement, fullName:string, value: string, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
     if (fullName[0] === ':' || fullName.match(/^x-bind:/)) {
         bind(el, fullName.split(':')[1], value, $store);
     }
@@ -155,21 +155,21 @@ const processDirective = (el:HTMLElement, fullName:string, value: string, $store
     }
 }
 
-const isReactiveElement = (el:unknown): el is ReactiveElement => el instanceof HTMLElement && KOVAA_SYMBOL in el;
+const isReactiveElement = (el:unknown): el is ReactiveElement<$Store> => el instanceof HTMLElement && KOVAA_SYMBOL in el;
 
-const walk = (el:HTMLElement, $store: Record<string, any>, context?: ReactiveElement) => {
+const walk = (el:HTMLElement, $store: Record<string, any>, context?: ReactiveElement<typeof $store>) => {
     if (el.nodeType !== 1) return;
     
     // if you walk into another kovaa element, update the context
     if (!Object.is(el, context) && isReactiveElement(el)) {
-        context = el;
+        context = el as ReactiveElement<typeof $store>;
     }
     
     if (!context && isReactiveElement(el)) {
-        context = el;
+        context = el as ReactiveElement<typeof $store>;
     }
     // @TODO: this code appeases typescript, need to remove it eventually
-    context = context as ReactiveElement;
+    context = context as ReactiveElement<typeof $store>;
     for (const attr of el.attributes) {
         const { name, value } = attr;
         processDirective(el, name, value, $store, context);

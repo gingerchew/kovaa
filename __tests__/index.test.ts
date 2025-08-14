@@ -36,7 +36,7 @@ describe('@createApp', () => {
         const app = createApp({
             Btn() {
                 this.addEventListener('click', () => {
-                    this.$store.name = 'John'
+                    this.name = 'John'
                 })
             },
             El() {},
@@ -45,14 +45,14 @@ describe('@createApp', () => {
 
         app.mount();
 
-        const el = document.querySelector<ReactiveElement>('x-el')!;
-        const button = document.querySelector<ReactiveElement>('x-btn')!;
+        const el = document.querySelector<ReactiveElement<{ name: string }>>('x-el')!;
+        const button = document.querySelector<ReactiveElement<{name:string}>>('x-btn')!;
 
-        expect(el.$store.name).toBe('Jane');
-        expect(button.$store.name).toBe('Jane');
+        expect(el.name).toBe('Jane');
+        expect(button.name).toBe('Jane');
         button.click();
-        expect(el.$store.name).toBe('John');
-        expect(button.$store.name).toBe('John');
+        expect(el.name).toBe('John');
+        expect(button.name).toBe('John');
     });
 
     it('should run effects from inside component definitions', () => {
@@ -171,15 +171,16 @@ describe('@createApp', () => {
             }
         }).mount();
 
+        const el = document.querySelector<ReactiveElement<{ name: string }>>('bind-directive')!;
         const span = document.querySelector('span')!;
         const div = document.querySelector('div')!;
         
-        expect(span.dataset.name).toBe('Jill');
-        expect(div.dataset.name).toBe('Jill')
+        expect(span.dataset.name).toBe(el.name);
+        expect(div.dataset.name).toBe(el.name)
         // @ts-ignore
         span?.parentElement.changeName();
-        expect(span.dataset.name).toBe('Jane');
-        expect(div.dataset.name).toBe('Jane');
+        expect(span.dataset.name).toBe(el.name);
+        expect(div.dataset.name).toBe(el.name);
     });
 
     it('should support event listeners', () => {
@@ -310,10 +311,10 @@ describe('@createApp', () => {
          */
         createApp({
             ParentEl({ name }) {
-                this.$store.name = name;
+                this.name = name;
             },
             ChildEl({ name }) {
-                this.$store.name = name;
+                this.name = name;
             },
         }).mount();
 
@@ -325,19 +326,20 @@ describe('@createApp', () => {
 
     it('should model select elements', () => {
         document.body.innerHTML = `<select-wrapper>
-            <select x-model="name">
+            <select x-model="fname">
                 <option>Jane</option>
                 <option>Jill</option>
             </select>
         </select-wrapper>`
 
-        let name = '';
+        let fname = '';
 
         createApp({
-            name: 'Jill',
+            fname: 'Jill',
             SelectWrapper() {
                 effect(() => {
-                    name = this.$store.name;
+                    console.log(this.fname);
+                    fname = this.fname;
                 })
                 this.addEventListener('click', () => {
                     this.querySelector('select').options[0].selected = true;
@@ -347,11 +349,11 @@ describe('@createApp', () => {
         }).mount();
 
 
-        expect(name).toBe('Jill');
+        expect(fname).toBe('Jill');
         // @ts-ignore
         document.querySelector('select-wrapper')!.click();
         
-        expect(name).toBe('Jane');
+        expect(fname).toBe('Jane');
     });
 
     it('should model input elements', () => {
@@ -365,7 +367,7 @@ describe('@createApp', () => {
             name: 'Jill',
             InputWrapper() {
                 effect(() => {
-                    name = this.$store.name;
+                    name = this.name;
                 });
                 this.addEventListener('click', () => {
                     this.querySelector('input').value = 'Jane';
@@ -393,7 +395,7 @@ describe('@createApp', () => {
         createApp({
             check: [],
             CheckboxWrapper() {
-                effect(() => check = this.$store.check);
+                effect(() => check = this.check);
                 this.addEventListener('click', () => {
                     const secondCheck = this.querySelector('[value="2"]')!;
                     secondCheck.checked = true;
@@ -419,10 +421,14 @@ describe('@createApp', () => {
         createApp({
             radio,
             RadioWrapper() {
-                effect(() => radio = this.$store.radio);
                 this.addEventListener('click', () => {
                     this.querySelector('input:last-child')?.click();
                 });
+                return {
+                    connected() {
+                        effect(() => radio = this.radio);
+                    }
+                }
             }
         }).mount();
 
@@ -443,8 +449,8 @@ describe('@createApp', () => {
             startsTrue: true,
             ShowDirective() {
                 this.addEventListener('click', () => {
-                    this.$store.startsFalse = true;
-                    this.$store.startsTrue = false;
+                    this.startsFalse = true;
+                    this.startsTrue = false;
                 });
             }
         }).mount();

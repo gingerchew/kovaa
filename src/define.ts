@@ -1,4 +1,4 @@
-import type { ReactiveElement } from "./types";
+import type { $Store, ReactiveElement } from "./types";
 import { $t, evaluate } from "./utils";
 import { walk, KOVAA_SYMBOL } from "./walk";
 
@@ -13,8 +13,8 @@ interface Component {
     attributeChanged: (key: string, oldValue: any, newValue: any) => void;
 }
 
-const $ = (el:ReactiveElement) => document.querySelector.bind(el);
-const $$ = (el:ReactiveElement) => (selector:string) => Array.from(document.querySelectorAll.apply(el, [selector]));
+const $ = (el:ReactiveElement<$Store>) => document.querySelector.bind(el);
+const $$ = (el:ReactiveElement<$Store>) => (selector:string) => Array.from(document.querySelectorAll.apply(el, [selector]));
 
 const createFromTemplate = (str: string) => {
     const tmp = document.createElement('template');
@@ -22,7 +22,7 @@ const createFromTemplate = (str: string) => {
     return tmp;
 }
 
-const processDefinition = (def: Component, el: ReactiveElement) => {
+const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
     // If there is a tpl, 
     if ('$tpl' in def) {
         if ($t(def.$tpl) === 'String') {
@@ -56,7 +56,8 @@ const processDefinition = (def: Component, el: ReactiveElement) => {
 
 const define = (localName:string, def: ComponentDefinition & (() => Component), $store: Record<string, any>) => {
     if (!customElements.get(localName)) {
-        customElements.define(localName, class extends HTMLElement implements ReactiveElement {
+        // @ts-ignore
+        customElements.define(localName, class extends HTMLElement implements ReactiveElement<$store> {
             static get observedAttributes() { return def.props }
             $store = $store;
             #connected?: () => void;
@@ -64,22 +65,38 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
             #attributeChanged?: (key:string, oldValue: any, newValue: any) => void;
             ac = new AbortController();
             [KOVAA_SYMBOL] = true;
+            
             constructor() {
                 super();
 
+                for (const key of Object.keys($store)) {
+                    Object.defineProperty(this, key, {
+                        get() {
+                            console.log(key);
+                            return $store[key]
+                        },
+                        set(v) {
+                            $store[key] = v;
+                        }
+                    })
+                }
                 const scope = evaluate(this.getAttribute('x-scope') ?? '{}', $store);
-                const { $tpl, connected, disconnected, attributeChanged, ...methods } = processDefinition(def.apply<typeof this, (typeof scope)[], Component>(this, [scope, $, $$]) ?? { }, this);
+                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, (typeof scope)[], Component>(this, [scope, $, $$]) ?? { }, this);
                 
                 
                 this.#connected = connected?.bind(this);
                 this.#disconnected = disconnected?.bind(this);
                 this.#attributeChanged = attributeChanged?.bind(this);
 
-                for (const [key, method] of Object.entries(methods)) {
-                    Object.defineProperty(this, key, {
-                        value: method
-                    })
+                for (const [key, methodOrProp] of Object.entries(methodsAndProps)) {
+                    if (typeof methodOrProp === 'function') {
+                        Object.defineProperty(this, key, {
+                            value: methodOrProp,
+                        });
+                    }
                 }
+                console.log(Object.keys($store));
+
     
                 if ($tpl) {
                     this.append($tpl);

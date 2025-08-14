@@ -1,8 +1,15 @@
-interface ReactiveElement extends HTMLElement {
-    $store:Record<any, unknown>;
+type ReactiveElement<T> = {
+    $store:T;
+    #connected?: () => void;
     #disconnected?: () => void;
     #attributeChanged?: (key:string, oldValue: any, newValue: any) => void;
     ac: AbortController;
+} & HTMLElement & {
+    [Property in keyof T]: T[Property]
 }
 
-export { ReactiveElement }
+
+
+type $Store = Record<string, any>;
+
+export { ReactiveElement, $Store }
