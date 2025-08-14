@@ -13,8 +13,8 @@ interface Component {
     attributeChanged: (key: string, oldValue: any, newValue: any) => void;
 }
 
-const $ = (el:ReactiveElement<$Store>) => document.querySelector.bind(el);
-const $$ = (el:ReactiveElement<$Store>) => (selector:string) => Array.from(document.querySelectorAll.apply(el, [selector]));
+const $ = (el:ReactiveElement<$Store>) => (selector:string) => el.querySelector(selector);
+const $$ = (el:ReactiveElement<$Store>) => (selector:string) => Array.from(el.querySelectorAll(selector));
 
 const createFromTemplate = (str: string) => {
     const tmp = document.createElement('template');
@@ -73,6 +73,19 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
         }
     }
 }
+type $listen = {
+    <K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+    (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+}
+
+type ComponentDefArgs<T extends Record<string, any>> = {
+    $: ReturnType<typeof $>;
+    $$: ReturnType<typeof $$>;
+    $listen: $listen;
+    $emit: (event: string, el?: HTMLElement) => boolean
+} & {
+    [Property in keyof T]: T[Property]
+}
 
 const define = (localName:string, def: ComponentDefinition & (() => Component), $store: Record<string, any>) => {
     if (!customElements.get(localName)) {
@@ -90,8 +103,9 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 super();
                 definePropOrMethod(this, $store);
                 const scope = evaluate(this.getAttribute('x-scope') ?? '{}', $store);
-                
-                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, (typeof scope)[], Component>(this, [{ ...scope, $, $$ }]) ?? { }, this);
+                const $emit = (event:string, el?:HTMLElement) => (el ?? this).dispatchEvent(new CustomEvent(event));
+                const $listen = this.addEventListener.bind(this);
+                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, ComponentDefArgs<typeof scope>[], Component>(this, [{ ...scope, $: $(this), $$: $$(this), $emit, $listen }]) ?? { }, this);
                 
                 this.#connected = connected?.bind(this);
                 this.#disconnected = disconnected?.bind(this);

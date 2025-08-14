@@ -34,8 +34,8 @@ describe('@createApp', () => {
         document.body.innerHTML = `<x-el></x-el><x-btn></x-btn>`;
 
         const app = createApp({
-            Btn() {
-                this.addEventListener('click', () => {
+            Btn({ $listen }) {
+                $listen('click', () => {
                     this.name = 'John'
                 })
             },
@@ -165,7 +165,7 @@ describe('@createApp', () => {
             BindDirective() {
                 return {
                     changeName() {
-                        this.$store.name = 'Jane';
+                        this.name = 'Jane';
                     }
                 }
             }
@@ -336,14 +336,14 @@ describe('@createApp', () => {
 
         createApp({
             fname: 'Jill',
-            SelectWrapper() {
+            SelectWrapper({ $listen, $emit, $ }) {
                 effect(() => {
                     console.log(this.fname);
                     fname = this.fname;
                 })
-                this.addEventListener('click', () => {
-                    this.querySelector('select').options[0].selected = true;
-                    this.querySelector('select').dispatchEvent(new Event('change'));
+                $listen('click', () => {
+                    $('select').options[0].selected = true;
+                    $emit('change', $('select'));
                 })
             }
         }).mount();
@@ -365,13 +365,13 @@ describe('@createApp', () => {
 
         createApp({
             name: 'Jill',
-            InputWrapper() {
+            InputWrapper({ $listen, $emit, $ }) {
                 effect(() => {
                     name = this.name;
                 });
-                this.addEventListener('click', () => {
-                    this.querySelector('input').value = 'Jane';
-                    this.querySelector('input').dispatchEvent(new Event('input'));
+                $listen('click', () => {
+                    $('input').value = 'Jane';
+                    $emit('input', $('input'))
                 });
             }
         }).mount();
@@ -394,12 +394,12 @@ describe('@createApp', () => {
 
         createApp({
             check: [],
-            CheckboxWrapper() {
+            CheckboxWrapper({ $listen, $emit, $ }) {
                 effect(() => check = this.check);
-                this.addEventListener('click', () => {
-                    const secondCheck = this.querySelector('[value="2"]')!;
+                $listen('click', () => {
+                    const secondCheck = $('[value="2"]')!;
                     secondCheck.checked = true;
-                    secondCheck.dispatchEvent(new Event('change'));
+                    $emit('change', secondCheck);
                 });
             }
         }).mount();
