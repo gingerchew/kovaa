@@ -119,6 +119,21 @@ const show = (el:HTMLElement, _fullName:string, value:string, $store:Record<stri
     })
 }
 
+const text = (el:HTMLElement, _fullName:string, value:string, $store:Record<string, any>, context:ReactiveElement) => {
+    effect(() => {
+        let parsedValue;
+        try {
+            // Having to use $store is really messing with this whole thing
+            parsedValue = evaluate(`Object.keys($store).indexOf()`, $store, el, context);
+        } catch(e) {
+            parsedValue = evaluate(value, $store, el, context);
+        } finally {
+            console.log(parsedValue);
+            el.textContent = parsedValue
+        }
+    });
+}
+
 const processDirective = (el:HTMLElement, fullName:string, value: string, $store: Record<string, any>, context:ReactiveElement) => {
     if (fullName[0] === ':' || fullName.match(/^x-bind:/)) {
         bind(el, fullName.split(':')[1], value, $store);
@@ -134,6 +149,9 @@ const processDirective = (el:HTMLElement, fullName:string, value: string, $store
     }
     if (fullName.match(/^x-show$/)) {
         show(el, fullName, value, $store, context);
+    }
+    if (fullName.match(/^x-text$/)) {
+        text(el, fullName, value, $store, context);
     }
 }
 

@@ -452,8 +452,27 @@ describe('@createApp', () => {
         const t = document.querySelector<HTMLDivElement>('.true');
         expect(f!.style.display).toBe('none');
         expect(t!.style.display).toBe('flex');
+        // @ts-ignore
         document.querySelector('show-directive')?.click();
         expect(f?.style.display).toBe('');
         expect(t!.style.display).toBe('none');
+    });
+
+    it('should add text with x-text directive', () => {
+        document.body.innerHTML = `<x-text>
+            <div class="from-store" x-text="name"></div>
+            <div class="inline" x-text="'true'"></div>
+        </x-text>`
+
+        const fromStore = document.querySelector<HTMLDivElement>('.from-store')!;
+        const inline = document.querySelector<HTMLDivElement>('.inline')!;
+
+        createApp({
+            name: 'Jane',
+            Text() {}
+        }).mount();
+
+        expect(fromStore.textContent).toBe('Jane');
+        expect(inline.textContent).toBe('true');
     })
 });
