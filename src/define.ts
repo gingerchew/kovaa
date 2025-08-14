@@ -103,8 +103,11 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 super();
                 definePropOrMethod(this, $store);
                 const scope = evaluate(this.getAttribute('x-scope') ?? '{}', $store);
-                const $emit = (event:string, el?:HTMLElement) => (el ?? this).dispatchEvent(new CustomEvent(event));
+
+                // @TODO: Get $listen to support specifying an element to target and options
                 const $listen = this.addEventListener.bind(this);
+                const $emit = (event:string, el?:HTMLElement) => (el ?? this).dispatchEvent(new CustomEvent(event));
+                
                 const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, ComponentDefArgs<typeof scope>[], Component>(this, [{ ...scope, $: $(this), $$: $$(this), $emit, $listen }]) ?? { }, this);
                 
                 this.#connected = connected?.bind(this);
