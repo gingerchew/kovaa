@@ -54,6 +54,26 @@ const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
     return def;
 }
 
+const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $store: T, isReactive = true) => {
+    for (const key of Object.keys($store)) {
+        if (typeof $store[key] === 'function' || !isReactive) {
+            Object.defineProperty(instance, key, {
+                value: $store[key]
+            });
+        } else {
+            Object.defineProperty(instance, key, {
+                get() {
+                    return $store[key]
+                },
+                set(v: typeof $store[typeof key]) {
+                    // @ts-ignore
+                    $store[key] = v;
+                }
+            })
+        }
+    }
+}
+
 const define = (localName:string, def: ComponentDefinition & (() => Component), $store: Record<string, any>) => {
     if (!customElements.get(localName)) {
         // @ts-ignore
@@ -68,35 +88,16 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
             
             constructor() {
                 super();
-
-                for (const key of Object.keys($store)) {
-                    Object.defineProperty(this, key, {
-                        get() {
-                            console.log(key);
-                            return $store[key]
-                        },
-                        set(v) {
-                            $store[key] = v;
-                        }
-                    })
-                }
+                definePropOrMethod(this, $store);
                 const scope = evaluate(this.getAttribute('x-scope') ?? '{}', $store);
-                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, (typeof scope)[], Component>(this, [scope, $, $$]) ?? { }, this);
                 
+                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, (typeof scope)[], Component>(this, [scope, $, $$]) ?? { }, this);
                 
                 this.#connected = connected?.bind(this);
                 this.#disconnected = disconnected?.bind(this);
                 this.#attributeChanged = attributeChanged?.bind(this);
 
-                for (const [key, methodOrProp] of Object.entries(methodsAndProps)) {
-                    if (typeof methodOrProp === 'function') {
-                        Object.defineProperty(this, key, {
-                            value: methodOrProp,
-                        });
-                    }
-                }
-                console.log(Object.keys($store));
-
+                definePropOrMethod(this, methodsAndProps, false);
     
                 if ($tpl) {
                     this.append($tpl);
