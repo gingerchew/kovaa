@@ -144,8 +144,8 @@ describe('@createApp', () => {
         document.body.innerHTML = `<scope-parsing x-scope="{name:'Test'}"></scope-parsing>`
         let $scope;
         createApp({
-            ScopeParsing(scope: Record<string, string>) {
-                $scope = scope;
+            ScopeParsing({ name }: Record<string, string>) {
+                $scope = { name };
             }
         }).mount();
 

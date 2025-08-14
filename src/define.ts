@@ -91,7 +91,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 definePropOrMethod(this, $store);
                 const scope = evaluate(this.getAttribute('x-scope') ?? '{}', $store);
                 
-                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, (typeof scope)[], Component>(this, [scope, $, $$]) ?? { }, this);
+                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, (typeof scope)[], Component>(this, [{ ...scope, $, $$ }]) ?? { }, this);
                 
                 this.#connected = connected?.bind(this);
                 this.#disconnected = disconnected?.bind(this);
