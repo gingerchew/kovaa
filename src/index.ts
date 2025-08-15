@@ -18,9 +18,7 @@ const createApp = (appObj: Record<string, any>) => {
                 }
             }
 
-            els.forEach(([localName, def]) => {
-                define(localName, def, $store);
-            })
+            els.forEach(([localName, def]) => define(localName, def, $store));
         }
     }
 }

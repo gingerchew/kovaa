@@ -145,12 +145,14 @@ describe('@createApp', () => {
         let $scope;
         createApp({
             ScopeParsing({ name }: Record<string, string>) {
+                
+                
                 $scope = { name };
             }
         }).mount();
 
         await customElements.whenDefined('scope-parsing');
-
+        
         expect($scope).toStrictEqual({ name: 'Test' });
     })
 
@@ -480,5 +482,19 @@ describe('@createApp', () => {
 
         expect(fromStore.textContent).toBe('Jane');
         expect(inline.textContent).toBe('true');
+    });
+
+    it('should run effects from directives', () => {
+        const fn = vi.fn();
+        document.body.innerHTML = `<effect-directive x-effect="fn">
+        
+        </effect-directive>`;
+
+        createApp({
+            fn,
+            EffectDirective() {}
+        }).mount();
+
+        expect(fn).toBeCalled();
     })
 });

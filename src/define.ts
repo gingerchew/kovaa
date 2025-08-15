@@ -1,26 +1,6 @@
-import type { $Store, ReactiveElement } from "./types";
-import { $t, evaluate } from "./utils";
-import { walk, KOVAA_SYMBOL } from "./walk";
-
-type ComponentDefinition = {
-    props: string[]
-}
-
-interface Component {
-    $tpl: null|string|HTMLTemplateElement|DocumentFragment;
-    connected: () => void;
-    disconnected: () => void;
-    attributeChanged: (key: string, oldValue: any, newValue: any) => void;
-}
-
-const $ = (el:ReactiveElement<$Store>) => (selector:string) => el.querySelector(selector);
-const $$ = (el:ReactiveElement<$Store>) => (selector:string) => Array.from(el.querySelectorAll(selector));
-
-const createFromTemplate = (str: string) => {
-    const tmp = document.createElement('template');
-    tmp.innerHTML = str;
-    return tmp;
-}
+import type { $Store, ReactiveElement, Component, ComponentDefinition, ComponentDefArgs } from "./types";
+import { $t, evaluate, isComponent, KOVAA_SYMBOL, $, $$, createFromTemplate } from "./utils";
+import { walk } from "./walk";
 
 const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
     // If there is a tpl, 
@@ -56,6 +36,8 @@ const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
 
 const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $store: T, isReactive = true) => {
     for (const key of Object.keys($store)) {
+        // Don't add components to other component classes
+        if (isComponent(key, $store[key])) continue;
         if (typeof $store[key] === 'function' || !isReactive) {
             Object.defineProperty(instance, key, {
                 value: $store[key]
@@ -72,19 +54,6 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
             })
         }
     }
-}
-type $listen = {
-    <K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
-    (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
-}
-
-type ComponentDefArgs<T extends Record<string, any>> = {
-    $: ReturnType<typeof $>;
-    $$: ReturnType<typeof $$>;
-    $listen: $listen;
-    $emit: (event: string, el?: HTMLElement) => boolean
-} & {
-    [Property in keyof T]: T[Property]
 }
 
 const define = (localName:string, def: ComponentDefinition & (() => Component), $store: Record<string, any>) => {

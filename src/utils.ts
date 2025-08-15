@@ -1,4 +1,9 @@
-import type { ReactiveElement } from "./types";
+import type { $Store, ReactiveElement } from "./types";
+
+export const KOVAA_SYMBOL = Symbol()
+
+const $ = (el:ReactiveElement<$Store>) => (selector:string) => el.querySelector(selector);
+const $$ = (el:ReactiveElement<$Store>) => (selector:string) => Array.from(el.querySelectorAll(selector));
 
 const $t = (obj:unknown) => Object.prototype.toString.call(obj).slice(8, -1);
 
@@ -10,11 +15,10 @@ const makeLocalName = (s:string, prefix?: string) => {
     return localName.indexOf('-') < 0 ? `x-${localName}` : localName;
 }
 
-
 const fnCache = Object.create(null);
 const toFunction = (exp:string) => {
     try {
-        return new Function("$store", "$context", "$el", `${exp}`);
+        return new Function("$store", "$context", "$el", `with($store) { ${exp} }`);
     } catch(error) {
         console.error(`${(error as Error).message} in expression: ${exp}`)
         return () => {}
@@ -32,4 +36,14 @@ const execute = (exp: string, $store: Record<string, any>, $el?: HTMLElement, $c
     }
 }
 
-export { $t, makeLocalName, evaluate, toFunction }
+const isComponent = (key: string, value:string) => typeof value === 'function' && key[0].toUpperCase() === key[0];
+
+const isReactiveElement = (el:unknown): el is ReactiveElement<$Store> => el instanceof HTMLElement && KOVAA_SYMBOL in el;
+
+const createFromTemplate = (str: string) => {
+    const tmp = document.createElement('template');
+    tmp.innerHTML = str;
+    return tmp;
+}
+
+export { $t, makeLocalName, evaluate, toFunction, isComponent, isReactiveElement, $, $$, createFromTemplate }

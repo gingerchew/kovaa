@@ -1,8 +1,6 @@
 import { effect } from '@vue/reactivity';
-import type { $Store, ReactiveElement } from './types';
-import { evaluate, toFunction } from './utils';
-
-export const KOVAA_SYMBOL = Symbol()
+import type { ReactiveElement } from './types';
+import { evaluate, toFunction, isReactiveElement } from './utils';
 
 const walkChildren = (children: HTMLCollection, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
     for (let i = 0;i< children.length;i+=1) {
@@ -33,6 +31,13 @@ const xif = (el: HTMLElement, fullName:string, value:string, $store:Record<strin
     })
 }
 */
+
+const xEffect = (el: HTMLElement, _fullName: string, func: string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
+    // Evaluating the function like this works because of with($store) 
+    // might need to get this to work instead using with($context) to
+    // make pull from the reactive element instead
+    effect(evaluate(`() => ${func}()`, $store, el, context));
+}
 
 const model = (el: HTMLElement, _fullName: string, value:string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
     const assign = evaluate(`(val) => $store.${value} = val`, $store, el, context);
@@ -153,9 +158,10 @@ const processDirective = (el:HTMLElement, fullName:string, value: string, $store
     if (fullName.match(/^x-text$/)) {
         text(el, fullName, value, $store, context);
     }
+    if (fullName.match(/^x-effect$/)) {
+        xEffect(el, fullName, value, $store, context);
+    }
 }
-
-const isReactiveElement = (el:unknown): el is ReactiveElement<$Store> => el instanceof HTMLElement && KOVAA_SYMBOL in el;
 
 const walk = (el:HTMLElement, $store: Record<string, any>, context?: ReactiveElement<typeof $store>) => {
     if (el.nodeType !== 1) return;
