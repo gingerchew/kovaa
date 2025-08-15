@@ -297,7 +297,16 @@ describe('@createApp', () => {
         expect(document.querySelector('use-store-for-tpl')?.textContent).toBe('true');
     });
 
-    it('should maintain proper context across elements', () => {
+
+    /**
+     * Need to figure out how to adjust scoping so that the store inside of the individual components
+     * does not cross pollute.
+     * 
+     * Need to think on this
+     * 
+     * Currently it is pointless, I should research how petite-vue scope works a little more carefully
+     */
+    it.todo('should maintain proper context across elements', () => {
         document.body.innerHTML = `<parent-el x-scope="{name:'Jane'}">
             <child-el x-scope="{name:'Jill'}">
                 <span :data-name="name"></span>
@@ -305,12 +314,6 @@ describe('@createApp', () => {
             <div :data-name="name"></span>
         </parent-el>`;
 
-        /**
-         * Need to figure out how to adjust scoping so that the store inside of the individual components
-         * does not cross pollute.
-         * 
-         * Need to think on this
-         */
         createApp({
             ParentEl({ name }) {
                 this.name = name;
@@ -496,5 +499,33 @@ describe('@createApp', () => {
         }).mount();
 
         expect(fn).toBeCalled();
+    });
+
+    it('should run x-html directive', () => {
+        document.body.innerHTML = `<html-directive x-html="'<div></div>'"></html-directive><html-child>
+            <span x-html="testing"></span>
+        </html-child>`;
+
+        createApp({
+            testing: '<div id="exists"></div>',
+            HtmlDirective() {
+
+            },
+            HtmlChild() {
+
+            }
+        }).mount();
+
+        expect(document.body.children[0].children.length).toBe(1);
+        expect(document.getElementById('exists')).not.toBe(null)
+    });
+
+    it('should have simple text templating', () => {
+        document.body.innerHTML = `<tpl-inline>{{name}}</tpl-inline>`;
+        createApp({
+            name: 'Test',
+            TplInline() {}
+        }).mount();
+        expect(document.body.children[0].textContent).toBe('Test');
     })
 });

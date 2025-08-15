@@ -40,7 +40,7 @@ const xEffect = (el: HTMLElement, _fullName: string, func: string, $store:Record
 }
 
 const model = (el: HTMLElement, _fullName: string, value:string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
-    const assign = evaluate(`(val) => $store.${value} = val`, $store, el, context);
+    const assign = evaluate(`(val) => ${value} = val`, $store, el, context);
     if (el.localName === 'select') {
         const sel = el as HTMLSelectElement;
         sel.addEventListener('change', () => {
@@ -52,7 +52,7 @@ const model = (el: HTMLElement, _fullName: string, value:string, $store:Record<s
         });
 
         effect(() => {
-            const val = $store[value];
+            const val = context[value];
             for (let i = 0;i < sel.options.length;i+=1) {
                 if (sel.multiple) {
                     console.warn('[multiple] attribute is not supported');
@@ -68,8 +68,8 @@ const model = (el: HTMLElement, _fullName: string, value:string, $store:Record<s
         if (input.type === 'checkbox') {
             input.addEventListener('change', () => {
                 const checked = input.checked;
-                if (Array.isArray($store[value])) {
-                    const initial = [...$store[value]];
+                if (Array.isArray(context[value])) {
+                    const initial = [...context[value]];
                     const index = initial.indexOf(input.value);
                     const found = index > -1;
                     if (!checked && found) {
@@ -84,7 +84,7 @@ const model = (el: HTMLElement, _fullName: string, value:string, $store:Record<s
 
             let oldValue:any;
             effect(() => {
-                const val = $store[value];
+                const val = context[value];
                 if (Array.isArray(val)) {
                     input.checked = val.indexOf(input.value) > -1
                 } else if (val !== oldValue) {
@@ -99,7 +99,7 @@ const model = (el: HTMLElement, _fullName: string, value:string, $store:Record<s
 
             let oldValue:any;
             effect(() => {
-                const val = $store[value];
+                const val = context[value];
                 if (oldValue !== val) {
                     input.checked = val === input.value;
                 }
@@ -111,32 +111,29 @@ const model = (el: HTMLElement, _fullName: string, value:string, $store:Record<s
             });
 
             effect(() => {
-                input.value = $store[value];
+                input.value = context[value];
             })
         }
     }
 }
 
-const show = (el:HTMLElement, _fullName:string, value:string, $store:Record<string, any>, _context: ReactiveElement<typeof $store>) => {
+const show = (el:HTMLElement, _fullName:string, value:string, $store:Record<string, any>, context: ReactiveElement<typeof $store>) => {
     let initial = el.style.display;
     effect(() => {
-        el.style.display = $store[value] ? initial : 'none';
+        el.style.display = context[value] ? initial : 'none';
     })
 }
 
 const text = (el:HTMLElement, _fullName:string, value:string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
     effect(() => {
-        let parsedValue;
-        try {
-            // Having to use $store is really messing with this whole thing
-            parsedValue = evaluate(`Object.keys($store).indexOf()`, $store, el, context);
-        } catch(e) {
-            parsedValue = evaluate(value, $store, el, context);
-        } finally {
-            console.log(parsedValue);
-            el.textContent = parsedValue
-        }
+        el.textContent = evaluate(`${value}`, $store, el, context);
     });
+}
+
+const html = (el:HTMLElement, _fullName:string, value:string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
+    effect(() => {
+        el.innerHTML = evaluate(`${value}`, $store, el, context);
+    })
 }
 
 const processDirective = (el:HTMLElement, fullName:string, value: string, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
@@ -161,26 +158,48 @@ const processDirective = (el:HTMLElement, fullName:string, value: string, $store
     if (fullName.match(/^x-effect$/)) {
         xEffect(el, fullName, value, $store, context);
     }
+    if (fullName.match(/^x-html$/)) {
+        html(el, fullName, value, $store, context);
+    }
 }
-
+const delimiters = ['{{', '}}'];
+const delimitersRE = new RegExp((delimiters[0]+'([^]+?)'+delimiters[1]).replaceAll(/[\{\}]/g, '\\$&'), 'g');
 const walk = (el:HTMLElement, $store: Record<string, any>, context?: ReactiveElement<typeof $store>) => {
-    if (el.nodeType !== 1) return;
-    
-    // if you walk into another kovaa element, update the context
-    if (!Object.is(el, context) && isReactiveElement(el)) {
-        context = el as ReactiveElement<typeof $store>;
+    if (el.nodeType === 1) {
+        // if you walk into another kovaa element, update the context
+        if (!Object.is(el, context) && isReactiveElement(el)) {
+            context = el as ReactiveElement<typeof $store>;
+        }
+        
+        if (!context && isReactiveElement(el)) {
+            context = el as ReactiveElement<typeof $store>;
+        }
+        // @TODO: this code appeases typescript, need to remove it eventually
+        context = context as ReactiveElement<typeof $store>;
+        for (const attr of el.attributes) {
+            const { name, value } = attr;
+            processDirective(el, name, value, $store, context);
+        }
+        walkChildren(el.children, $store, context);
+    } else if (el.nodeType === 3) {
+        // is text node
+        const data = (el as unknown as Text).data;
+        let segments = [];
+        let lastIndex = 0;
+        let match;
+        while(match = delimitersRE.exec(data)) {
+            const leading = data.slice(lastIndex, match.index);
+            if (leading) segments.push(JSON.stringify(leading));
+            segments.push(`$s(${match[1]})`)
+            lastIndex = match.index + match[0].length;
+        }
+        if (lastIndex < data.length) {
+            segments.push(data.slice(lastIndex));
+        }
+        processDirective(el, 'text', segments.join('+'), $store, context!);
     }
-    
-    if (!context && isReactiveElement(el)) {
-        context = el as ReactiveElement<typeof $store>;
-    }
-    // @TODO: this code appeases typescript, need to remove it eventually
-    context = context as ReactiveElement<typeof $store>;
-    for (const attr of el.attributes) {
-        const { name, value } = attr;
-        processDirective(el, name, value, $store, context);
-    }
-    walkChildren(el.children, $store, context);
+
+
 }
 
 export { walk }
