@@ -1,12 +1,6 @@
 import { effect } from '@vue/reactivity';
-import type { ReactiveElement } from './types';
-import { evaluate, toFunction, isReactiveElement } from './utils';
-
-const walkChildren = (children: HTMLCollection, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
-    for (let i = 0;i< children.length;i+=1) {
-        walk(children[i] as HTMLElement, $store, context);
-    }
-}
+import type { $Store, ReactiveElement } from './types';
+import { evaluate, isReactiveElement, toFunction } from './utils';
 
 const bind = (el: HTMLElement, attrName: string, value: string, $store: Record<string, any>) => {
     effect(() => el.setAttribute(attrName, $store[value]));
@@ -124,82 +118,94 @@ const show = (el:HTMLElement, _fullName:string, value:string, $store:Record<stri
     })
 }
 
-const text = (el:HTMLElement, _fullName:string, value:string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
+const text = (el:HTMLElement|Node, _fullName:string, value:string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
     effect(() => {
-        el.textContent = evaluate(`${value}`, $store, el, context);
+        el.textContent = evaluate(value, $store, el as HTMLElement, context);
     });
 }
 
+export const toDisplayString = (str:unknown) => 
+    str == null ? ''
+        : str !== null && typeof str === 'object' ?
+            JSON.stringify(str)
+        : String(str);
+
 const html = (el:HTMLElement, _fullName:string, value:string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
     effect(() => {
-        el.innerHTML = evaluate(`${value}`, $store, el, context);
+        el.innerHTML = evaluate(value, $store, el, context);
     })
 }
 
-const processDirective = (el:HTMLElement, fullName:string, value: string, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
+
+const textReplaceRegex = /\{\{([^]+?)\}\}/g;
+
+export const createWalker = (el:ReactiveElement<typeof $store>, $store: $Store) => {
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+            switch(node.nodeType) {
+                case 1:
+                case 3:
+                case 11:
+                    return NodeFilter.FILTER_ACCEPT
+                default:
+                    return NodeFilter.FILTER_SKIP
+            }
+        },
+    });
+    let context = el;
+    let node = walker.currentNode!;
+    do {
+        if (node.nodeType === 1) {
+            if (isReactiveElement(node)) context = node as ReactiveElement<typeof $store>;
+            const el = node as HTMLElement;
+            for(const attr of el.attributes) {
+                const { name, value } = attr;
+                
+                processDirective(el, name, value, $store, context);
+            }
+        } else if (node.nodeType === 3) {
+            const data = (node as Text).data;
+            let segments:string[] = [];
+            let lastIndex = 0;
+            for (const match of data.matchAll(textReplaceRegex)) {
+                const leading = data.slice(lastIndex, match.index);
+                if (leading) segments.push(JSON.stringify(leading));
+                segments.push(`$s(${match[1]})`);
+                lastIndex = match.index + match[0].length;
+            }
+            if (lastIndex < data.length) {
+                segments.push(data.slice(lastIndex));
+            }
+            processDirective(node, 'x-text', segments.join('+'), $store, context);
+        }
+    } while (node = walker.nextNode()!)
+
+    return walker;
+}
+
+export const processDirective = (el:HTMLElement|Node, fullName:string, value: string, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
     if (fullName[0] === ':' || fullName.match(/^x-bind:/)) {
-        bind(el, fullName.split(':')[1], value, $store);
+        bind(el as HTMLElement, fullName.split(':')[1], value, $store);
     }
     if (fullName[0] === '@' || fullName.match(/^x-on:/)) {
-        on(el, fullName.split(/@|:/)[1], value, $store, context);
+        on(el as HTMLElement, fullName.split(/@|:/)[1], value, $store, context);
     }
     if (fullName.match(/^x-if$/)) {
 
     }
     if (fullName.match(/^x-model$/)) {
-        model(el, fullName, value, $store, context);
+        model(el as HTMLElement, fullName, value, $store, context);
     }
     if (fullName.match(/^x-show$/)) {
-        show(el, fullName, value, $store, context);
+        show(el as HTMLElement, fullName, value, $store, context);
     }
     if (fullName.match(/^x-text$/)) {
         text(el, fullName, value, $store, context);
     }
     if (fullName.match(/^x-effect$/)) {
-        xEffect(el, fullName, value, $store, context);
+        xEffect(el as HTMLElement, fullName, value, $store, context);
     }
     if (fullName.match(/^x-html$/)) {
-        html(el, fullName, value, $store, context);
+        html(el as HTMLElement, fullName, value, $store, context);
     }
 }
-const delimiters = ['{{', '}}'];
-const delimitersRE = new RegExp((delimiters[0]+'([^]+?)'+delimiters[1]).replaceAll(/[\{\}]/g, '\\$&'), 'g');
-const walk = (el:HTMLElement, $store: Record<string, any>, context?: ReactiveElement<typeof $store>) => {
-    if (el.nodeType === 1) {
-        // if you walk into another kovaa element, update the context
-        if (!Object.is(el, context) && isReactiveElement(el)) {
-            context = el as ReactiveElement<typeof $store>;
-        }
-        
-        if (!context && isReactiveElement(el)) {
-            context = el as ReactiveElement<typeof $store>;
-        }
-        // @TODO: this code appeases typescript, need to remove it eventually
-        context = context as ReactiveElement<typeof $store>;
-        for (const attr of el.attributes) {
-            const { name, value } = attr;
-            processDirective(el, name, value, $store, context);
-        }
-        walkChildren(el.children, $store, context);
-    } else if (el.nodeType === 3) {
-        // is text node
-        const data = (el as unknown as Text).data;
-        let segments = [];
-        let lastIndex = 0;
-        let match;
-        while(match = delimitersRE.exec(data)) {
-            const leading = data.slice(lastIndex, match.index);
-            if (leading) segments.push(JSON.stringify(leading));
-            segments.push(`$s(${match[1]})`)
-            lastIndex = match.index + match[0].length;
-        }
-        if (lastIndex < data.length) {
-            segments.push(data.slice(lastIndex));
-        }
-        processDirective(el, 'text', segments.join('+'), $store, context!);
-    }
-
-
-}
-
-export { walk }

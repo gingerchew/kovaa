@@ -1,6 +1,6 @@
 import type { $Store, ReactiveElement, Component, ComponentDefinition, ComponentDefArgs } from "./types";
 import { $t, evaluate, isComponent, KOVAA_SYMBOL, $, $$, createFromTemplate } from "./utils";
-import { walk } from "./walk";
+import { createWalker, toDisplayString } from "./walk";
 
 const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
     // If there is a tpl, 
@@ -56,6 +56,7 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
     }
 }
 
+
 const define = (localName:string, def: ComponentDefinition & (() => Component), $store: Record<string, any>) => {
     if (!customElements.get(localName)) {
         // @ts-ignore
@@ -66,10 +67,12 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
             #disconnected?: () => void;
             #attributeChanged?: (key:string, oldValue: any, newValue: any) => void;
             ac = new AbortController();
+            $s = toDisplayString;
             [KOVAA_SYMBOL] = true;
             
             constructor() {
                 super();
+
                 definePropOrMethod(this, $store);
                 const scope = evaluate(this.getAttribute('x-scope') ?? '{}', $store);
 
@@ -88,10 +91,8 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 if ($tpl) {
                     this.append($tpl);
                 }
-    
-                // parse before running connected
-                walk(this, $store, this);
-    
+
+                createWalker(this, $store);
             }
 
             connectedCallback() {

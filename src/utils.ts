@@ -46,4 +46,6 @@ const createFromTemplate = (str: string) => {
     return tmp;
 }
 
-export { $t, makeLocalName, evaluate, toFunction, isComponent, isReactiveElement, $, $$, createFromTemplate }
+const perf = (start = performance.now()) => () => console.log(performance.now() - start);
+
+export { $t, makeLocalName, evaluate, toFunction, isComponent, isReactiveElement, $, $$, createFromTemplate, perf }
