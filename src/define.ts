@@ -1,6 +1,7 @@
 import type { $Store, ReactiveElement, Component, ComponentDefinition, ComponentDefArgs } from "./types";
 import { $t, evaluate, isComponent, KOVAA_SYMBOL, $, $$, createFromTemplate } from "./utils";
-import { createWalker, toDisplayString } from "./walk";
+import { createWalker } from "./walk";
+import { toDisplayString } from "./directives/text";
 
 const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
     // If there is a tpl, 

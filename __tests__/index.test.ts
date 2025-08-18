@@ -489,9 +489,7 @@ describe('@createApp', () => {
 
     it('should run effects from directives', () => {
         const fn = vi.fn();
-        document.body.innerHTML = `<effect-directive x-effect="fn">
-        
-        </effect-directive>`;
+        document.body.innerHTML = `<effect-directive x-effect="fn"></effect-directive>`;
 
         createApp({
             fn,

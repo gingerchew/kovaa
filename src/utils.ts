@@ -25,9 +25,9 @@ const toFunction = (exp:string) => {
     }
 }
 
-const evaluate = (exp: string, $store: Record<string, any>, $el?: HTMLElement, $context?: ReactiveElement<typeof $store>) => execute(`return(${exp})`, $store, $el, $context);
+const evaluate = (exp: string, $store: Record<string, any>, $el?: Node, $context?: ReactiveElement<typeof $store>) => execute(`return(${exp})`, $store, $el, $context);
 
-const execute = (exp: string, $store: Record<string, any>, $el?: HTMLElement, $context?: ReactiveElement<typeof $store>) => {
+const execute = (exp: string, $store: Record<string, any>, $el?: Node, $context?: ReactiveElement<typeof $store>) => {
     const fn = fnCache[exp] ||= toFunction(exp);
     try {
         return fn($store, $context, $el);
