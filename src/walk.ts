@@ -141,27 +141,15 @@ const textReplaceRegex = /\{\{([^]+?)\}\}/g;
 
 export const createWalker = (el:ReactiveElement<typeof $store>, $store: $Store) => {
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
-        acceptNode(node) {
-            switch(node.nodeType) {
-                case 1:
-                case 3:
-                case 11:
-                    return NodeFilter.FILTER_ACCEPT
-                default:
-                    return NodeFilter.FILTER_SKIP
-            }
-        },
+        acceptNode: (node) => [1,3,11].includes(node.nodeType) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
     });
     let context = el;
     let node = walker.currentNode!;
     do {
         if (node.nodeType === 1) {
             if (isReactiveElement(node)) context = node as ReactiveElement<typeof $store>;
-            const el = node as HTMLElement;
             for(const attr of el.attributes) {
-                const { name, value } = attr;
-                
-                processDirective(el, name, value, $store, context);
+                processDirective(el, attr.name, attr.value, $store, context);
             }
         } else if (node.nodeType === 3) {
             const data = (node as Text).data;
