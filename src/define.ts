@@ -1,7 +1,6 @@
 import type { $Store, ReactiveElement, Component, ComponentDefinition, ComponentDefArgs } from "./types";
 import { $t, evaluate, isComponent, KOVAA_SYMBOL, $, $$, createFromTemplate } from "./utils";
 import { createWalker } from "./walk";
-import { toDisplayString } from "./directives/text";
 
 const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
     // If there is a tpl, 
@@ -68,7 +67,6 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
             #disconnected?: () => void;
             #attributeChanged?: (key:string, oldValue: any, newValue: any) => void;
             ac = new AbortController();
-            $s = toDisplayString;
             [KOVAA_SYMBOL] = true;
             
             constructor() {
