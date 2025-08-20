@@ -1,5 +1,6 @@
 import { reactive, effect } from '@vue/reactivity';
 import { define } from './define';
+import { builtInDirectives, type Directive } from './directives';
 import { $t, makeLocalName } from './utils';
 import { toDisplayString } from './directives/text';
 
@@ -10,13 +11,13 @@ const createApp = (appObj: Record<string, any>) => {
 
     return {
         mount() {
-            const els = [];
-            for (const [key, value] of Object.entries(appObj)) {
-                if (key[0] !== '$' && typeof value === 'function' && key[0].toUpperCase() === key[0]) {
-                    els.push([makeLocalName(key, appObj.$prefix), value]);
-                }
-            }
-            els.forEach(([localName, def]) => define(localName, def, $store));
+            Object.keys(appObj).forEach(key => key[0] !== '$' &&
+                typeof appObj[key] === 'function' &&
+                key[0].toUpperCase() === key[0] &&
+                    define(makeLocalName(key, appObj.$prefix), appObj[key], $store))
+        },
+        directive(key: string, dir: (config: Directive<HTMLElement>) => void) {
+            builtInDirectives[key] = dir;
         }
     }
 }
