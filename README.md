@@ -7,14 +7,14 @@ import { createApp, effect } from 'kovaa';
 
 createApp({
     name: 'Jane',
-    Button() {
-        this.addEventListener('click', () => {
-            this.$store.name = document.querySelector('input').value
+    Button({ $listen }) {
+        $listen('click', () => {
+            this.name = document.querySelector('input').value
         })
     },
     Output() {
         effect(() => {
-            this.textContent = this.$store.name;
+            this.textContent = this.name;
         })
     }
 }).mount();
@@ -38,8 +38,8 @@ createApp({
 ```js
 createApp({
     i: 0,
-    Button() {
-        this.addEventListener('click', () => this.$store.i = Math.random());
+    Button({ $listen }) {
+        $listen('click', () => this.i = Math.random());
     }
 }).mount(); // This defines an `x-button` custom element that will set the i property to a random number between 0 and 1 when clicked
 createApp({
@@ -52,7 +52,7 @@ createApp({
     name: 'Jill',
     ExampleElement() {
         // Updating this store will update it above
-        this.$store.name = 'Jackson';
+        this.name = 'Jackson';
     }
 })
 ```
@@ -68,22 +68,33 @@ createApp({
 ```
 If the component function is a single word like `Button` or `Input`, Kovaa will add a `x-` to the start of the element name, as seen in the first example.
 
-The function runs in the `connectedCallback` of the custom element, and returns an interface:
+The function runs in the `constructor` of the custom element, and returns an interface:
 ```ts
-function MyButton() {
-    this.addEventListener('click', console.log);
+// If you use $listen
+function MyButton({ $listen }) {
+    $listen('click', console.log);
 
     return {
+        attributeChanged() {...}
+        connected() {...},
         disconnected() {
             this.removeEventListener('click', console.log);
         }
     }
 }
 ```
-Currently the returned interface has little going on. It will be expanded to be more useful as the library develops.
 
 ## How do reactive properties work?
-To make reactive properties easier, Kovaa uses `@vue/reactivity` as a familiar solution. We reexport `reactive` and `effect`, and anything in the app object will be added to the magic `$store` variable.
+To make reactive properties easier, Kovaa uses `@vue/reactivity` as a familiar solution. We reexport `reactive` and `effect`, and anything in the app object will be added to the magic `$store` variable. `$store` is available inside component definitions within `this`, but anything in the `appObj` will be added and reactive to the custom elements.
+
+```js
+createApp({
+    name: 'Jane',
+    MyInput() {
+        console.assert(this.name === this.$store.name); // true
+    }
+})
+```
 
 > **What is so magic about $store?** Nothing. The only thing magic about it is that it is included as a property in each element defined in the `createApp` function. They all point to the app object passed into the `createApp` function.
 
@@ -96,8 +107,8 @@ Because your functions are just custom elements, you can interact with the dom u
 Because `observedAttributes` is a `static` getter, we have to define the props we want to observe on the function definition.
 
 ```js
-function MyButton() {
-    this.addEventListener('click', () => {
+function MyButton({ $listen }) {
+    $listen('click', () => {
         this.toggleAttribute('pressed');
     });
 
@@ -118,12 +129,20 @@ When the custom element is defined, it will look if the `props` key is defined o
 
 ## How do I add methods to my custom element?
 
-Methods are added by adding them from the returned interface.
+To mimic something like this:
+
+```js
+customElements.define('x-el', class extends HTMLElement {
+    parsePhoneNumber() {...}
+})
+```
+
+All you have to do is add the function to the returned interface. This will then be automatically bound to the element and added to the class.
 
 ```js
 createApp({
-    HasMethods() {
-        this.addEventListener('click', () => {
+    HasMethods({ $listen }) {
+        $listen('click', () => {
             // methods from the returned object can be used in things like event listeners
             this.parsePhoneNumber();
         });
@@ -216,6 +235,22 @@ createApp({
 }).mount();
 ```
 
+On top of this, some utility functions are passed into the initial object:
+
+```js
+function MyButton({ $, $$, $listen, $emit, ...scope }) {
+    const span = $('span'); // this.querySelector('span');
+    const divArr = $$('div'); // HTMLDivElement[];
+    // If you use $listen to listen for events, 
+    // they are automatically cleaned up in
+    // in the `disconnectedCallback` using
+    // an `AbortController` signal
+    $listen('click', () => ...);
+    // dispatch events simply as needed
+    $emit('click');
+}
+```
+
 ## How do I bind data to attributes? What about event listeners?
 
 Kovaa supports the `:` symbol as a "bind" directive, as well as `x-bind:`, as well as `@` for event listeners.
@@ -233,6 +268,8 @@ createApp({
     BindDirective() {},
 }).mount();
 ```
+
+Event listeners added with `@` or `x-on:` directives will be removed automatically in the `disconnectedCallback` automatically using an `AbortController` signal.
 
 > Currently this requires an ElementDefinition to work. Unlike petite-vue where creating the app is enough to unlock reactive functionality.
 
@@ -276,7 +313,7 @@ Custom directives are not supported currently. This will likely come after all t
 
 ## TODO
 
-- Have data scope work similar to petite-vue
+- [ ] Have data scope work similar to petite-vue
 ```js
 createApp({
     name: 'Jackson',
@@ -291,12 +328,12 @@ createApp({
     }
 })
 ```
-- Stop using `$store`, make reactive properties available on `this`
-- Directives on children (requires making a walk function)
+- [ ] Stop using `$store`, make reactive properties available on `this`
+- [ ] Directives on children (requires making a walk function)
 ```html
 <button-group>
     <button @click="methodFoundOnButton">Click to do a thing</button>
     <button @click="methodThatNeedsAnArgument(3)">Click to do a different thing</button>
 </button-group>
 ```
-- Alternatives for v-if/else-if/else
+- [ ] Alternatives for v-if/else-if/else
