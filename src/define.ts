@@ -1,5 +1,5 @@
 import type { $Store, ReactiveElement, Component, ComponentDefinition, ComponentDefArgs } from "./types";
-import { $t, evaluate, isComponent, KOVAA_SYMBOL, $, $$, createFromTemplate } from "./utils";
+import { $t, evaluate, isComponent, KOVAA_SYMBOL, $, $$, createFromTemplate, defineProp } from "./utils";
 import { createWalker } from "./walk";
 
 const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
@@ -26,9 +26,7 @@ const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
             def.$tpl = def.$tpl.content.cloneNode(true) as DocumentFragment;
         }
     } else {
-        Object.defineProperty(def, '$tpl', {
-            value: null
-        });
+        defineProp(def, '$tpl', { value: null });
     }
 
     return def;
@@ -39,14 +37,12 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
         // Don't add components to other component classes
         if (isComponent(key, $store[key])) continue;
         if (typeof $store[key] === 'function' || !isReactive) {
-            Object.defineProperty(instance, key, {
+            defineProp(instance, key, {
                 value: $store[key]
-            });
+            })
         } else {
-            Object.defineProperty(instance, key, {
-                get() {
-                    return $store[key]
-                },
+            defineProp(instance, key, {
+                get() { return $store[key] },
                 set(v: typeof $store[typeof key]) {
                     // @ts-ignore
                     $store[key] = v;
@@ -111,7 +107,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 this.#disconnected?.();
             }
         });
-    } else {
+    } else if (import.meta.env.DEV) {
         throw new Error(`Custom Element with name ${localName} has already been defined.`);
     }
 }

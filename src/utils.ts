@@ -40,12 +40,8 @@ const isComponent = (key: string, value:string) => typeof value === 'function' &
 
 const isReactiveElement = (el:unknown): el is ReactiveElement<$Store> => el instanceof HTMLElement && KOVAA_SYMBOL in el;
 
-const createFromTemplate = (str: string) => {
-    const tmp = document.createElement('template');
-    tmp.innerHTML = str;
-    return tmp;
-}
+const createFromTemplate = (str: string, tmp = document.createElement('template')) => (tmp.innerHTML = str, tmp);
 
-const perf = (start = performance.now()) => () => console.log(performance.now() - start);
+const defineProp = (instance: object, key: string, config: object) => Object.defineProperty(instance, key, config);
 
-export { $t, makeLocalName, evaluate, toFunction, isComponent, isReactiveElement, $, $$, createFromTemplate, perf }
+export { $t, makeLocalName, evaluate, toFunction, isComponent, isReactiveElement, $, $$, createFromTemplate, defineProp }
