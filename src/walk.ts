@@ -8,6 +8,7 @@ import { text } from './directives/text';
 import { model } from './directives/model';
 import { xEffect } from './directives/effect';
 import { on } from './directives/on';
+import { builtInDirectives } from './directives';
 
 /*
 const xif = (el: HTMLElement, fullName:string, value:string, $store:Record<string, any>, context: ReactiveElement) => {
@@ -32,9 +33,8 @@ export const createWalker = (context:ReactiveElement<typeof $store>, $store: $St
             }
         } else if (node.nodeType === 3) {
             const data = (node as Text).data;
-            let segments:string[] = [];
-            let lastIndex = 0;
-            for (const match of data.matchAll(textReplaceRegex)) {
+            let segments:string[] = [], lastIndex = 0;
+            for (let match of data.matchAll(textReplaceRegex)) {
                 const leading = data.slice(lastIndex, match.index);
                 if (leading) segments.push(JSON.stringify(leading));
                 segments.push(`$s(${match[1]})`);
@@ -52,29 +52,16 @@ export const createWalker = (context:ReactiveElement<typeof $store>, $store: $St
 
 export const processDirective = ($el:HTMLElement|Node, arg:string, exp: string, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
     const get = (e = exp) => evaluate(e, $store, $el, context);
-    if (arg[0] === ':' || arg.match(/^x-bind:/)) {
-        bind({ get, $el: $el as unknown as HTMLElement, arg, exp, effect, context, $store });
+    let dir;
+    if (arg[0] === ':' || arg.match(/^x-bind:/)) dir = bind;
+    if (arg[0] === '@' || arg.match(/^x-on:/)) dir = on;
+    if (arg === 'x-model') dir = model;
+    if (arg === 'x-show') dir = show;
+    if (arg === 'x-text') dir = text;
+    if (arg === 'x-effect') dir = xEffect;
+    if (arg === 'x-html') dir = html;
+    if (!dir && (arg = arg.split('x-')[1]) in builtInDirectives)  {
+        dir = builtInDirectives[arg];
     }
-    if (arg[0] === '@' || arg.match(/^x-on:/)) {
-        on({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, get, effect });
-    }
-    if (arg.match(/^x-if$/)) {
-
-    }
-    if (arg.match(/^x-model$/)) {
-        model({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, get, effect });
-    }
-    if (arg.match(/^x-show$/)) {
-        show({ $el: $el as unknown as HTMLElement, arg, exp, context, get, $store, effect });
-    }
-    if (arg.match(/^x-text$/)) {
-        text({ $el: $el as unknown as HTMLElement, get, arg, exp, $store, context, effect });
-    }
-    if (arg.match(/^x-effect$/)) {
-        xEffect({ arg, exp, $store, effect, get, context, $el: $el as unknown as HTMLElement });
-        // xEffect($el as HTMLElement, arg, exp, $store, context);
-    }
-    if (arg.match(/^x-html$/)) {
-        html({ get, $el: $el as unknown as HTMLElement, arg, exp, effect, $store, context });
-    }
+   dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, get, effect });
 }
