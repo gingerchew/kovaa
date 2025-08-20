@@ -7,6 +7,7 @@ import { text } from "./text";
 import { show } from "./show";
 import { model } from "./model";
 import { on } from "./on";
+import { xEffect } from "./effect";
 
 export interface Directive<T> {
     get: (exp?: string) => any;
@@ -19,12 +20,12 @@ export interface Directive<T> {
 }
 
 
-export const builtInDirectives = {
+export const builtInDirectives:Record<string, (arg: Directive<HTMLElement>) => void> = {
     html,
     bind,
     text,
     show,
     model,
     on,
-    effect,
+    effect: xEffect,
 }
