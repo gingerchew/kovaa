@@ -343,7 +343,6 @@ describe('@createApp', () => {
             fname: 'Jill',
             SelectWrapper({ $listen, $emit, $ }) {
                 effect(() => {
-                    console.log(this.fname);
                     fname = this.fname;
                 })
                 $listen('click', () => {
@@ -357,7 +356,7 @@ describe('@createApp', () => {
         expect(fname).toBe('Jill');
         // @ts-ignore
         document.querySelector('select-wrapper')!.click();
-        
+        console.log('test', document.querySelector('select')!.value);
         expect(fname).toBe('Jane');
     });
 
@@ -471,20 +470,20 @@ describe('@createApp', () => {
 
     it('should add text with x-text directive', () => {
         document.body.innerHTML = `<x-text>
-            <div class="from-store" x-text="name"></div>
             <div class="inline" x-text="'true'"></div>
+            <div class="from-store" x-text="name"></div>
         </x-text>`
 
         const fromStore = document.querySelector<HTMLDivElement>('.from-store')!;
         const inline = document.querySelector<HTMLDivElement>('.inline')!;
 
         createApp({
-            name: 'Jane',
+            name: "Jane",
             Text() {}
         }).mount();
 
-        expect(fromStore.textContent).toBe('Jane');
         expect(inline.textContent).toBe('true');
+        expect(fromStore.textContent).toBe('Jane');
     });
 
     it('should run effects from directives', () => {
@@ -525,5 +524,20 @@ describe('@createApp', () => {
             TplInline() {}
         }).mount();
         expect(document.body.children[0].textContent).toBe('Test');
+    });
+
+    it('should support custom directives', () => {
+        document.body.innerHTML = `<x-test>
+            <span x-test="1"></span>
+        </x-test>`
+        const fn = vi.fn();
+        const app = createApp({
+            Test() {}
+        });
+
+        app.directive('test', fn);
+        app.mount();
+
+        expect(fn).toBeCalled();
     })
 });
