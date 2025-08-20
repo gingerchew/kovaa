@@ -1,4 +1,5 @@
 import type { Directive } from ".";
+import { isArray } from "@vue/shared";
 
 export const model = ({ $el, get, exp, context, effect }: Directive<HTMLElement>) => {// (el: HTMLElement, _fullName: string, value:string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
     const assign = get(`(val) => ${exp} = val`);
@@ -15,7 +16,7 @@ export const model = ({ $el, get, exp, context, effect }: Directive<HTMLElement>
         effect(() => {
             const val = context[exp];
             for (let i = 0;i < sel.options.length;i+=1) {
-                if (sel.multiple) {
+                if (sel.multiple && import.meta.env.DEV) {
                     console.warn('[multiple] attribute is not supported');
                     break;
                 } else {
@@ -29,7 +30,7 @@ export const model = ({ $el, get, exp, context, effect }: Directive<HTMLElement>
         if (input.type === 'checkbox') {
             input.addEventListener('change', () => {
                 const checked = input.checked;
-                if (Array.isArray(context[exp])) {
+                if (isArray(context[exp])) {
                     const initial = [...context[exp]];
                     const index = initial.indexOf(input.value);
                     const found = index > -1;
@@ -46,7 +47,7 @@ export const model = ({ $el, get, exp, context, effect }: Directive<HTMLElement>
             let oldValue:any;
             effect(() => {
                 const val = context[exp];
-                if (Array.isArray(val)) {
+                if (isArray(val)) {
                     input.checked = val.indexOf(input.value) > -1
                 } else if (val !== oldValue) {
                     input.checked = val === input.value;

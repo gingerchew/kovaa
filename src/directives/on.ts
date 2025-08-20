@@ -8,7 +8,6 @@ export const on = ({ $el, arg, exp, $store, context, get }:Directive<HTMLElement
         context[exp].bind(context) : 
         exp in $store ?
         $store[exp].bind(context) :
-        // () => toFunction(exp)($store, context, $el);
         get(`(e) => ${exp}`);
 
     // Use the abort controller from the context to clear it when the context element is removed
