@@ -1,11 +1,13 @@
 import { reactive, effect } from '@vue/reactivity';
 import { define } from './define';
 import { builtInDirectives, type Directive } from './directives';
-import { $t, makeLocalName } from './utils';
+import { makeLocalName } from './utils';
+import { toRawType } from '@vue/shared';
 import { toDisplayString } from './directives/text';
 
 const createApp = (appObj: Record<string, any>) => {
-    if ($t(appObj) !== 'Object' && import.meta.env.DEV) throw new Error('App definition must be an object');
+    if (toRawType(appObj) !== 'Object') throw new Error('App definition must be an object');
+
     appObj.$s = toDisplayString
 
     return {
