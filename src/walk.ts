@@ -51,7 +51,6 @@ export const createWalker = (context:ReactiveElement<typeof $store>, $store: $St
 }
 
 export const processDirective = ($el:HTMLElement|Node, arg:string, exp: string, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
-    const get = (e = exp) => evaluate(e, $store, $el, context);
     let dir;
     if (arg[0] === ':' || arg.match(/^x-bind:/)) dir = bind;
     if (arg[0] === '@' || arg.match(/^x-on:/)) dir = on;
@@ -63,5 +62,5 @@ export const processDirective = ($el:HTMLElement|Node, arg:string, exp: string, 
     if (!dir && (arg = arg.split('x-')[1]) in builtInDirectives)  {
         dir = builtInDirectives[arg];
     }
-   dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, get, effect });
+    dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, effect, get: (e = exp) => evaluate(e, $store, $el, context) });
 }
