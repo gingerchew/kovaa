@@ -1,34 +1,31 @@
+import { toRawType } from "@vue/shared";
 import type { $Store, ReactiveElement, Component, ComponentDefinition, ComponentDefArgs } from "./types";
-import { $t, evaluate, isComponent, KOVAA_SYMBOL, $, $$, createFromTemplate, defineProp } from "./utils";
+import { evaluate, isComponent, KOVAA_SYMBOL, createFromTemplate, defineProp } from "./utils";
 import { createWalker } from "./walk";
 
 const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
+    def = Object.assign({ $tpl: null }, def);
     // If there is a tpl, 
-    if ('$tpl' in def) {
-        if ($t(def.$tpl) === 'String') {
-            let tmp:HTMLTemplateElement;
-            try {
-                tmp = (el.querySelector<HTMLTemplateElement>(def.$tpl as string)! ?? document.querySelector<HTMLTemplateElement>(def.$tpl as string)!);
-            } catch(e) {
-                // if querySelector fails, assume def.$tpl is an html string
-                tmp = createFromTemplate(def.$tpl as string);
-            }
-
-            // if tmp is still null, assume it is a text string
-            if (tmp === null) {
-                import.meta.env.DEV && console.warn(`Could not find element with selector ${def.$tpl} falling back to using as template`);
-                tmp = createFromTemplate(def.$tpl as string);
-            }
-            
-            def.$tpl = tmp.content.cloneNode(true) as DocumentFragment;
-        } 
-        if (def.$tpl instanceof HTMLTemplateElement) {
-            def.$tpl = def.$tpl.content.cloneNode(true) as DocumentFragment;
+    if (toRawType(def.$tpl) === 'String') {
+        let tmp:HTMLTemplateElement;
+        try {
+            tmp = (el.querySelector<HTMLTemplateElement>(def.$tpl as string)! ?? document.querySelector<HTMLTemplateElement>(def.$tpl as string)!);
+        } catch(e) {
+            // if querySelector fails, assume def.$tpl is an html string
+            tmp = createFromTemplate(def.$tpl as string);
         }
-    } else {
-        defineProp(def, '$tpl', { value: null });
-    }
 
+        // if tmp is still null, assume it is a text string
+        if (tmp === null) {
+            import.meta.env.DEV && console.warn(`Could not find element with selector ${def.$tpl} falling back to using as template`);
+            tmp = createFromTemplate(def.$tpl as string);
+        }
+        
+        def.$tpl = tmp.content.cloneNode(true) as DocumentFragment;
+    } 
+    if (def.$tpl instanceof HTMLTemplateElement) {
+        def.$tpl = def.$tpl.content.cloneNode(true) as DocumentFragment;
+    }
     return def;
 }
 
@@ -54,14 +51,12 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
 
 
 const define = (localName:string, def: ComponentDefinition & (() => Component), $store: Record<string, any>) => {
+    let $connected: () => void, $disconnected: () => void, $attributeChanged: (key:string, o:any, n: any) => void;
     if (!customElements.get(localName)) {
         // @ts-ignore
         customElements.define(localName, class extends HTMLElement implements ReactiveElement<$store> {
-            static get observedAttributes() { return def.props }
+            static get observedAttributes() { return def.props; }
             $store = $store;
-            #connected?: () => void;
-            #disconnected?: () => void;
-            #attributeChanged?: (key:string, oldValue: any, newValue: any) => void;
             ac = new AbortController();
             [KOVAA_SYMBOL] = true;
             
@@ -75,11 +70,11 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 const $listen = this.addEventListener.bind(this);
                 const $emit = (event:string, el?:HTMLElement) => (el ?? this).dispatchEvent(new CustomEvent(event));
                 
-                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, ComponentDefArgs<typeof scope>[], Component>(this, [{ ...scope, $: $(this), $$: $$(this), $emit, $listen }]) ?? { }, this);
+                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, ComponentDefArgs<typeof scope>[], Component>(this, [{ ...scope, $: (selector:string) => this.querySelector(selector), $$: (selector:string) => [...this.querySelectorAll(selector)], $emit, $listen }]), this);
                 
-                this.#connected = connected?.bind(this);
-                this.#disconnected = disconnected?.bind(this);
-                this.#attributeChanged = attributeChanged?.bind(this);
+                $connected = connected?.bind(this);
+                $disconnected = disconnected?.bind(this);
+                $attributeChanged = attributeChanged?.bind(this);
 
                 definePropOrMethod(this, methodsAndProps, false);
     
@@ -91,11 +86,11 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
             }
 
             connectedCallback() {
-                this.#connected?.();
+                $connected?.();
             }
 
             attributeChangedCallback(key:string, oldValue: any, newValue: any) {
-                this.#attributeChanged?.(key, oldValue, newValue);
+                $attributeChanged?.(key, oldValue, newValue);
             }
 
             disconnectedCallback() {
@@ -104,7 +99,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 // and when the element is removed from the dom,
                 // they will be cleaned up
                 this.ac.abort();
-                this.#disconnected?.();
+                $disconnected?.();
             }
         });
     } else if (import.meta.env.DEV) {
