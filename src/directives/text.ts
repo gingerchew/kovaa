@@ -1,9 +1,7 @@
 import type { Directive } from ".";
 
 export const text = <T extends HTMLElement>({ get,$el, effect }:Directive<T>) => {
-    effect(() => {
-        $el.textContent = toDisplayString(get());
-    });
+    effect(() => $el.textContent = toDisplayString(get()));
 }
 
 export const toDisplayString = (str:unknown) => 

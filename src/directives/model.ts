@@ -2,8 +2,8 @@ import type { Directive } from ".";
 import { isArray } from "@vue/shared";
 
 export const model = ({ $el, get, exp, context, effect }: Directive<HTMLElement>) => {// (el: HTMLElement, _fullName: string, value:string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
-    const assign = get(`(val) => ${exp} = val`);
-    if ($el.localName === 'select') {
+    const assign = get(`v=>${exp}=v`);
+    if ($el.tagName === 'SELECT') {
         const sel = $el as unknown as HTMLSelectElement;
         sel.addEventListener('change', () => {
             const selectedVal = Array.prototype.filter
@@ -16,7 +16,7 @@ export const model = ({ $el, get, exp, context, effect }: Directive<HTMLElement>
         effect(() => {
             const val = context[exp];
             for (let i = 0;i < sel.options.length;i+=1) {
-                if (sel.multiple && import.meta.env.DEV) {
+                if (import.meta.env.DEV && sel.multiple) {
                     console.warn('[multiple] attribute is not supported');
                     break;
                 } else {
@@ -25,7 +25,7 @@ export const model = ({ $el, get, exp, context, effect }: Directive<HTMLElement>
             }
         })
     }
-    if ($el.localName === 'input') {
+    if ($el.tagName === 'INPUT') {
         const input = $el as unknown as HTMLInputElement;
         if (input.type === 'checkbox') {
             input.addEventListener('change', () => {
@@ -72,9 +72,7 @@ export const model = ({ $el, get, exp, context, effect }: Directive<HTMLElement>
                 assign(input.value);
             });
 
-            effect(() => {
-                input.value = context[exp];
-            })
+            effect(() => input.value = context[exp])
         }
     }
 }
