@@ -2,15 +2,8 @@ import type { $Store, ReactiveElement } from "./types";
 
 export const KOVAA_SYMBOL = Symbol()
 
-const $ = (el:ReactiveElement<$Store>) => (selector:string) => el.querySelector(selector);
-const $$ = (el:ReactiveElement<$Store>) => (selector:string) => Array.from(el.querySelectorAll(selector));
-
-const $t = (obj:unknown) => Object.prototype.toString.call(obj).slice(8, -1);
-
 const makeLocalName = (s:string, prefix?: string) => {
-    let localName = s.replace(/(.)([A-Z])/g, '$1-$2').toLowerCase();
-    
-    if (prefix) return `${prefix}-${localName}`;
+    let localName = `${prefix ? prefix + '-' : ''}${s.replace(/(.)([A-Z])/g, '$1-$2')}`.toLowerCase();
 
     return localName.indexOf('-') < 0 ? `x-${localName}` : localName;
 }
@@ -44,4 +37,4 @@ const createFromTemplate = (str: string, tmp = document.createElement('template'
 
 const defineProp = (instance: object, key: string, config: object) => Object.defineProperty(instance, key, config);
 
-export { $t, makeLocalName, evaluate, toFunction, isComponent, isReactiveElement, $, $$, createFromTemplate, defineProp }
+export { makeLocalName, evaluate, toFunction, isComponent, isReactiveElement, createFromTemplate, defineProp }
