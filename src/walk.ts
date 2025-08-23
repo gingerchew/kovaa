@@ -1,4 +1,3 @@
-import { effect } from '@vue/reactivity';
 import type { $Store, ReactiveElement } from './types';
 import { evaluate } from './utils';
 import { bind } from './directives/bind';
@@ -65,7 +64,7 @@ export const processDirective = ($el:HTMLElement|Node, arg:string, exp: string, 
     if (!dir && (arg = arg.split('x-')[1]) in builtInDirectives)  {
         dir = builtInDirectives[arg];
     }
-    const cleanup = dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, effect, get });
+    const cleanup = dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, effect: context.effect.bind(context), get });
     if (cleanup) {
         context.cleanups.push(cleanup);
     }
