@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
 import { createApp, effect, reactive } from '../src/index';
-import type { ReactiveElement } from '../src/types';
+import type { $Store, ReactiveElement } from '../src/types';
 
 describe('@createApp', () => {
     it('should fail if the passed object is invalid', () => {
@@ -538,5 +538,25 @@ describe('@createApp', () => {
         app.mount();
 
         expect(fn).toBeCalled();
-    })
+    });
+
+    it('should save directive cleanups to the cleanup property on the reactive element', () => {
+        document.body.innerHTML = `<dir-with-cleanup x-cleanup></dir-with-cleanup>`
+        const app = createApp({
+            DirWithCleanup() {}
+        })
+        const fn = vi.fn();
+        const runsDirective = vi.fn();
+        app.directive('cleanup', () => {
+            runsDirective();
+            return fn;
+        });
+        app.mount();
+        const el = document.querySelector<ReactiveElement<$Store>>('dir-with-cleanup')!;
+        expect(runsDirective).toBeCalled();
+        expect(el.cleanups.length).toBe(1);
+        expect(fn).not.toBeCalled();
+        el?.remove();
+        expect(fn).toBeCalled();
+    });
 });

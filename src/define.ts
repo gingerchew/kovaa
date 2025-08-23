@@ -2,6 +2,8 @@ import { toRawType } from "@vue/shared";
 import type { $Store, ReactiveElement, Component, ComponentDefinition, ComponentDefArgs } from "./types";
 import { evaluate, isComponent, KOVAA_SYMBOL, createFromTemplate, defineProp } from "./utils";
 import { createWalker } from "./walk";
+import { effect } from '@vue/reactivity';
+import type { ReactiveEffectRunner } from "@vue/reactivity";
 
 const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
     def = Object.assign({ $tpl: null }, def);
@@ -59,7 +61,14 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
             $store = $store;
             ac = new AbortController();
             [KOVAA_SYMBOL] = true;
-            
+            effects:ReactiveEffectRunner[] = [];
+            cleanups:(() => void)[] = [];
+            effect(fn: () => any) {
+                const e = effect(fn);
+                this.effects.push(e);
+                return e;
+            }
+
             constructor() {
                 super();
 
@@ -100,6 +109,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 // they will be cleaned up
                 this.ac.abort();
                 $disconnected?.();
+                this.cleanups.forEach(c => c());
             }
         });
     } else if (import.meta.env.DEV) {

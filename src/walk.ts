@@ -65,5 +65,8 @@ export const processDirective = ($el:HTMLElement|Node, arg:string, exp: string, 
     if (!dir && (arg = arg.split('x-')[1]) in builtInDirectives)  {
         dir = builtInDirectives[arg];
     }
-    dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, effect, get });
+    const cleanup = dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, effect, get });
+    if (cleanup) {
+        context.cleanups.push(cleanup);
+    }
 }
