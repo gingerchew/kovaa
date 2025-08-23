@@ -54,7 +54,6 @@ export const createWalker = (context:ReactiveElement<typeof $store>, $store: $St
 
 export const processDirective = ($el:HTMLElement|Node, arg:string, exp: string, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
     const get = (e = exp) => evaluate(e, $store, $el, context);
-    console.log({ arg, exp });
     let dir;
     if (arg[0] === ':' || arg.match(/^x-bind:/)) dir = bind;
     if (arg[0] === '@' || arg.match(/^x-on:/)) dir = on;
