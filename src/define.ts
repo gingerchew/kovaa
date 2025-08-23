@@ -40,7 +40,7 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
         } else {
             defineProp(instance, key, {
                 get() { return $store[key] },
-                set(v: typeof $store[typeof key]) {
+                set(v: typeof $store[keyof typeof $store]) {
                     // @ts-ignore
                     $store[key] = v;
                 }

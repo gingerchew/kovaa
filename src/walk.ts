@@ -17,12 +17,12 @@ const xif = (el: HTMLElement, fullName:string, value:string, $store:Record<strin
     })
 }
 */
-
+const openingBracket = "{{";
 const textReplaceRegex = /\{\{([^]+?)\}\}/g;
 
 export const createWalker = (context:ReactiveElement<typeof $store>, $store: $Store) => {
     const walker = document.createTreeWalker(context, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
-        acceptNode: (node) => [1,3,11].includes(node.nodeType) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
+        acceptNode: (node) => [1,3].includes(node.nodeType) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
     });
     let node = walker.currentNode!;
     do {
@@ -34,6 +34,8 @@ export const createWalker = (context:ReactiveElement<typeof $store>, $store: $St
         } else if (node.nodeType === 3) {
             const data = (node as Text).data;
             let segments:string[] = [], lastIndex = 0;
+            // @TODO: There must be a way to not need this
+            if (data.indexOf(openingBracket) < 0) continue;
             for (let match of data.matchAll(textReplaceRegex)) {
                 const leading = data.slice(lastIndex, match.index);
                 if (leading) segments.push(JSON.stringify(leading));
@@ -51,6 +53,8 @@ export const createWalker = (context:ReactiveElement<typeof $store>, $store: $St
 }
 
 export const processDirective = ($el:HTMLElement|Node, arg:string, exp: string, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
+    const get = (e = exp) => evaluate(e, $store, $el, context);
+    console.log({ arg, exp });
     let dir;
     if (arg[0] === ':' || arg.match(/^x-bind:/)) dir = bind;
     if (arg[0] === '@' || arg.match(/^x-on:/)) dir = on;
@@ -62,5 +66,5 @@ export const processDirective = ($el:HTMLElement|Node, arg:string, exp: string, 
     if (!dir && (arg = arg.split('x-')[1]) in builtInDirectives)  {
         dir = builtInDirectives[arg];
     }
-    dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, effect, get: (e = exp) => evaluate(e, $store, $el, context) });
+    dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, effect, get });
 }

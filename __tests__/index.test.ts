@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { createApp, effect } from '../src/index';
+import { createApp, effect, reactive } from '../src/index';
 import type { ReactiveElement } from '../src/types';
 
 describe('@createApp', () => {
@@ -176,11 +176,11 @@ describe('@createApp', () => {
         const el = document.querySelector<ReactiveElement<{ name: string }>>('bind-directive')!;
         const span = document.querySelector('span')!;
         const div = document.querySelector('div')!;
-        
+
         expect(span.dataset.name).toBe(el.name);
         expect(div.dataset.name).toBe(el.name)
         // @ts-ignore
-        span?.parentElement.changeName();
+        el.changeName();
         expect(span.dataset.name).toBe(el.name);
         expect(div.dataset.name).toBe(el.name);
     });
@@ -330,34 +330,33 @@ describe('@createApp', () => {
     });
 
     it('should model select elements', () => {
-        document.body.innerHTML = `<select-wrapper>
+        document.body.innerHTML = `<select-wrapper :data-name="fname">
             <select x-model="fname">
                 <option>Jane</option>
                 <option>Jill</option>
             </select>
         </select-wrapper>`
 
-        let fname = '';
-
         createApp({
             fname: 'Jill',
-            SelectWrapper({ $listen, $emit, $ }) {
-                effect(() => {
-                    fname = this.fname;
-                })
-                $listen('click', () => {
-                    $('select').options[0].selected = true;
-                    $emit('change', $('select'));
-                })
+            SelectWrapper({ $emit, $ }) {
+                
+                return {
+                    updateChoice() {
+                        $('select').value = 'Jane'
+                        // Have to mimic the change actually happening
+                        $emit('change', $('select'));
+                    }
+                }
             }
         }).mount();
 
-
-        expect(fname).toBe('Jill');
+        const wrapper = document.querySelector('select-wrapper')!;
+        expect(wrapper.getAttribute('data-name')).toBe('Jill');
         // @ts-ignore
-        document.querySelector('select-wrapper')!.click();
-        console.log('test', document.querySelector('select')!.value);
-        expect(fname).toBe('Jane');
+        wrapper.updateChoice();
+        
+        expect(wrapper.getAttribute('data-name')).toBe('Jane');
     });
 
     it('should model input elements', () => {
@@ -471,14 +470,14 @@ describe('@createApp', () => {
     it('should add text with x-text directive', () => {
         document.body.innerHTML = `<x-text>
             <div class="inline" x-text="'true'"></div>
-            <div class="from-store" x-text="name"></div>
+            <div class="from-store" x-text="username"></div>
         </x-text>`
 
         const fromStore = document.querySelector<HTMLDivElement>('.from-store')!;
         const inline = document.querySelector<HTMLDivElement>('.inline')!;
 
         createApp({
-            name: "Jane",
+            username: "Jane",
             Text() {}
         }).mount();
 

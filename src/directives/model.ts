@@ -2,7 +2,7 @@ import type { Directive } from ".";
 import { isArray } from "@vue/shared";
 
 export const model = ({ $el, get, exp, context, effect }: Directive<HTMLElement>) => {// (el: HTMLElement, _fullName: string, value:string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
-    const assign = get(`v=>${exp}=v`);
+    const assign = get(`(v) => { ${exp} = v }`);
     if ($el.tagName === 'SELECT') {
         const sel = $el as unknown as HTMLSelectElement;
         sel.addEventListener('change', () => {
