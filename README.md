@@ -29,6 +29,9 @@ createApp({
 <x-output></x-output>
 ```
 
+>[!WARNING] Kovaa is still under development
+> While some things are implemented, there are still likely to be rough edges and things that don't work.
+
 ## Differences between Petite-Vue and Kovaa
 
 - Directives are not implemented yet
