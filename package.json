@@ -16,7 +16,12 @@
     "type": "git",
     "url": "git+https://github.com/gingerchew/kovaa.git"
   },
-  "keywords": ["web components","custom elements","petite-vue-like","directives"],
+  "keywords": [
+    "web components",
+    "custom elements",
+    "petite-vue-like",
+    "directives"
+  ],
   "author": "gingerchew",
   "license": "MIT",
   "bugs": {
