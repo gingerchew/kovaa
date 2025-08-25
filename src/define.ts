@@ -57,7 +57,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
     if (!customElements.get(localName)) {
         // @ts-ignore
         customElements.define(localName, class extends HTMLElement implements ReactiveElement<$store> {
-            static get observedAttributes() { return def.props; }
+            static get observedAttributes() { return def.$attrs; }
             localName = localName;
             $store = $store;
             ac = new AbortController();
