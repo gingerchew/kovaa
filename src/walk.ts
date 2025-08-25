@@ -59,11 +59,11 @@ export const createWalker = (context: ReactiveElement<typeof $store>, $store: $S
     });
     let node:Node|null = walker.currentNode;
     while (node) {
-        try {
-            if (!Object.is(node, context) && isReactiveElement(node)) continue;
-    
+        if (!Object.is(node, context) && isReactiveElement(node)) {
+            walker.parentNode();
+            node = walker.nextSibling();
+        } else {
             parseNode(node, $store, context);
-        } finally {
             node = walker.nextNode();
         }
     }
