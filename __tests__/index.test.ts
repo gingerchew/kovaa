@@ -83,7 +83,7 @@ describe('@createApp', () => {
                 attributeChanged
             }
         }
-        AttributeChanged.props = ['test'];
+        AttributeChanged.$attrs = ['test'];
         
         createApp({
             AttributeChanged
@@ -549,14 +549,14 @@ describe('@createApp', () => {
         })
         const fn = vi.fn();
         const runsDirective = vi.fn();
-        app.directive('cleanup', () => {
+        app.directive('cleanup', function cleanup() {
             runsDirective();
             return fn;
         });
         app.mount();
         const el = document.querySelector<ReactiveElement<$Store>>('dir-with-cleanup')!;
-        expect(runsDirective).toBeCalled();
         expect(el.cleanups.length).toBe(1);
+        expect(runsDirective).toBeCalled();
         expect(fn).not.toBeCalled();
         el?.remove();
         expect(fn).toBeCalled();
@@ -604,7 +604,7 @@ describe('@createApp', () => {
         const w = document.querySelector<ReactiveElement<{ name: string }>>('el-with-effects')!;
         const wo = document.querySelector<ReactiveElement<{ name: string }>>('el-without-effects')!;
         const w1 = document.querySelector<ReactiveElement<{ name: string }>>('el-with-one-effect')!;
-        console.log(wo.effects.map(e => e.effect.fn.toString()));
+        
         expect(wo.effects.length).toBe(0);
         expect(w1.effects.length).toBe(1);
         expect(w.effects.length).toBe(2);
