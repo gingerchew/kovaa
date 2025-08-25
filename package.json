@@ -1,8 +1,28 @@
 {
   "name": "kovaa",
-  "private": true,
   "version": "0.0.0",
   "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/kovaa.js",
+  "exports": {
+    ".": {
+      "import": "./dist/kovaa.js",
+      "require": "./dist/kovaa.umd.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gingerchew/kovaa.git"
+  },
+  "keywords": ["web components","custom elements","petite-vue-like","directives"],
+  "author": "gingerchew",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gingerchew/kovaa/discussions"
+  },
+  "homepage": "https://github.com/gingerchew/kovaa#readme",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
