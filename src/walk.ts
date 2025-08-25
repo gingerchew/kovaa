@@ -8,6 +8,7 @@ import { model } from './directives/model';
 import { xEffect } from './directives/effect';
 import { on } from './directives/on';
 import { builtInDirectives } from './directives';
+import { hasChanged } from '@vue/shared';
 
 /*
 const xif = (el: HTMLElement, fullName:string, value:string, $store:Record<string, any>, context: ReactiveElement) => {
@@ -59,7 +60,7 @@ export const createWalker = (context: ReactiveElement<typeof $store>, $store: $S
     });
     let node:Node|null = walker.currentNode;
     while (node) {
-        if (!Object.is(node, context) && isReactiveElement(node)) {
+        if (isReactiveElement(node) && !hasChanged(node, context)) {
             if (!walker.currentNode.nextSibling) {
                 walker.parentNode();
             }
@@ -86,7 +87,9 @@ export const processDirective = ($el: HTMLElement | Node, arg: string, exp: stri
         arg === 'x-effect' ? xEffect :
         arg === 'x-html' ? html :
         builtInDirectives[arg.split('x-')[1]];
-    /*
+    
+    console.log({ dir: builtInDirectives[arg.split('x-')[1]]});
+        /*
     if (token === ':') dir = bind;
     if (token === '@') dir = on;
     if (arg.match(/^x-bind:/)) dir = bind;
