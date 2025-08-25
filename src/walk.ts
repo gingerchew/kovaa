@@ -1,11 +1,6 @@
 import type { $Store, ReactiveElement } from './types';
 import { evaluate, isReactiveElement } from './utils';
 import { bind } from './directives/bind';
-import { html } from './directives/html';
-import { show } from './directives/show';
-import { text } from './directives/text';
-import { model } from './directives/model';
-import { xEffect } from './directives/effect';
 import { on } from './directives/on';
 import { builtInDirectives } from './directives';
 import { hasChanged } from '@vue/shared';
@@ -30,8 +25,6 @@ const parseNode = (node: Node, $store: $Store, context: ReactiveElement<typeof $
         // console.log(node, node === context);
         const el = node as HTMLElement;
         for (const attr of el.attributes) {
-            const { name, value } = attr;
-            console.log({ name, value })
             // Don't bother processing attributes that aren't directives
             if (attr.name.match(/(x-)|:|@/)) {
                 processDirective(el, attr.name, attr.value, $store, context);
@@ -58,16 +51,15 @@ export const createWalker = (context: ReactiveElement<typeof $store>, $store: $S
     const walker = document.createTreeWalker(context, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
         acceptNode: (node) => [1, 3].includes(node.nodeType) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
     });
+    parseNode(walker.currentNode, $store, context);
     let node:Node|null = walker.currentNode;
-    while (node) {
+    while (node = walker.nextNode()) {
         if (isReactiveElement(node) && !hasChanged(node, context)) {
             if (!walker.currentNode.nextSibling) {
                 walker.parentNode();
             }
-            node = walker.nextNode();
         } else {
             parseNode(node, $store, context);
-            node = walker.nextNode();
         }
     }
 
@@ -81,28 +73,8 @@ export const processDirective = ($el: HTMLElement | Node, arg: string, exp: stri
         token === '@' ? on :
         arg.match(/^x-bind:/) ? bind :
         arg.match(/^x-on:/) ? on :
-        arg === 'x-model' ? model :
-        arg === 'x-show' ? show :
-        arg === 'x-text' ? text :
-        arg === 'x-effect' ? xEffect :
-        arg === 'x-html' ? html :
         builtInDirectives[arg.split('x-')[1]];
     
-    console.log({ dir: builtInDirectives[arg.split('x-')[1]]});
-        /*
-    if (token === ':') dir = bind;
-    if (token === '@') dir = on;
-    if (arg.match(/^x-bind:/)) dir = bind;
-    if (arg.match(/^x-on:/)) dir = on;
-    if (arg === 'x-model') dir = model;
-    if (arg === 'x-show') dir = show;
-    if (arg === 'x-text') dir = text;
-    if (arg === 'x-effect') dir = xEffect;
-    if (arg === 'x-html') dir = html;
-    if (!dir && (arg = arg.split('x-')[1]) in builtInDirectives) {
-        dir = builtInDirectives[arg];
-    }
-    */
     const cleanup = dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, effect: context.effect.bind(context), get });
 
     if (cleanup) {
