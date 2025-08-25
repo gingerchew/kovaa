@@ -15,7 +15,7 @@ type ReactiveElement<T> = {
 }
 
 type ComponentDefinition = {
-    props: string[]
+    $attrs: string[]
 }
 
 interface Component {
