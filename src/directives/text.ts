@@ -1,3 +1,4 @@
+import { isObject } from "@vue/shared";
 import type { Directive } from "../types";
 
 export const text:Directive<HTMLElement> = ({ arg, exp, get, $el, effect }) => {
@@ -7,6 +8,6 @@ export const text:Directive<HTMLElement> = ({ arg, exp, get, $el, effect }) => {
 
 export const toDisplayString = (str:unknown) => 
     str == null ? ''
-        : str !== null && typeof str === 'object' ?
+        : isObject(str) ?
             JSON.stringify(str)
         : String(str);
