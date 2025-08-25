@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { createApp, effect } from '../src/index';
 import type { $Store, ReactiveElement } from '../src/types';
 
-describe(() => {
+describe('kovaa', () => {
     it('should fail if the passed object is invalid', () => {
 
         // @ts-expect-error
@@ -613,7 +613,7 @@ describe(() => {
          * Should work though and can be tested manually
          */
     });
-    
+
     it.todo('should add style sheets to the adopted stylesheets of respective contexts', () => {
         document.body.innerHTML = `<with-shadowroot><template shadowrootmode="open"></template><with-shadowroot><to-document></to-document>`;
 

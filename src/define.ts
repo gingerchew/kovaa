@@ -1,4 +1,4 @@
-import { extend, isFunction, isString } from "@vue/shared";
+import { extend, isFunction, isObject, isString } from "@vue/shared";
 import type { $Store, ReactiveElement, Component, ComponentDefinition, ComponentDefArgs } from "./types";
 import { evaluate, isComponent, KOVAA_SYMBOL, createFromTemplate, defineProp } from "./utils";
 import { createWalker } from "./walk";
@@ -54,12 +54,13 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
 const define = (localName:string, def: ComponentDefinition & (() => Component), $store: Record<string, any>) => {
     let $connected: () => void, $disconnected: () => void, $attributeChanged: (key:string, o:any, n: any) => void;
     if (!customElements.get(localName)) {
+        const ac = new AbortController();
         // @ts-ignore
         customElements.define(localName, class extends HTMLElement implements ReactiveElement<$store> {
             static get observedAttributes() { return def.$attrs; }
             localName = localName;
             $store = $store;
-            ac = new AbortController();
+            ac = ac;
             [KOVAA_SYMBOL] = true;
             effects:ReactiveEffectRunner[] = [];
             cleanups:(() => void)[] = [];
@@ -76,7 +77,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 const scope = evaluate(this.getAttribute('x-scope') ?? '{}', $store);
 
                 // @TODO: Get $listen to support specifying an element to target and options
-                const $listen = this.addEventListener.bind(this);
+                const $listen = (eventName:keyof HTMLElementEventMap, handler:EventListenerOrEventListenerObject, options?: AddEventListenerOptions) => this.addEventListener(eventName, handler, Object.assign({ capture: true, signal: ac.signal }, typeof options === 'boolean' ? { capture: options } : isObject(options) ? options : {}));
                 const $emit = (event:string, el?:HTMLElement) => (el ?? this).dispatchEvent(new CustomEvent(event));
                 
                 const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, ComponentDefArgs<typeof scope>[], Component>(this, [{ ...scope, css: css(this), $: (selector:string) => this.querySelector(selector), $$: (selector:string) => [...this.querySelectorAll(selector)], $emit, $listen }]), this);
@@ -107,7 +108,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 // they will all have this signal attached to them
                 // and when the element is removed from the dom,
                 // they will be cleaned up
-                this.ac.abort();
+                ac.abort();
                 $disconnected?.();
                 this.cleanups.forEach(c => c());
             }
