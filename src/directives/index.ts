@@ -9,7 +9,9 @@ import { model } from "./model";
 import { on } from "./on";
 import { xEffect } from "./effect";
 
-export interface Directive<T> {
+export type Directive<T = HTMLElement> = (arg: DirectiveConfig<T>) => void|(() => void);
+
+export interface DirectiveConfig<T> {
     get: (exp?: string) => any;
     exp: string;
     $store: $Store;
@@ -20,7 +22,7 @@ export interface Directive<T> {
 }
 
 
-export const builtInDirectives:Record<string, (arg: Directive<HTMLElement>) => void> = {
+export const builtInDirectives:Record<string, Directive> = {
     html,
     bind,
     text,

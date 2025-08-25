@@ -2,12 +2,6 @@ import type { $Store, ReactiveElement } from "./types";
 
 export const KOVAA_SYMBOL = Symbol()
 
-const makeLocalName = (s:string, prefix?: string) => {
-    let localName = `${prefix ? prefix + '-' : ''}${s.replace(/(.)([A-Z])/g, '$1-$2')}`.toLowerCase();
-
-    return localName.indexOf('-') < 0 ? `x-${localName}` : localName;
-}
-
 const fnCache = Object.create(null);
 const toFunction = (exp:string) => {
     try {
@@ -38,4 +32,4 @@ const createFromTemplate = (str: string, tmp = document.createElement('template'
 
 const defineProp = (instance: object, key: string, config: object) => Object.defineProperty(instance, key, config);
 
-export { makeLocalName, evaluate, toFunction, isComponent, isReactiveElement, createFromTemplate, defineProp }
+export { evaluate, toFunction, isComponent, isReactiveElement, createFromTemplate, defineProp }

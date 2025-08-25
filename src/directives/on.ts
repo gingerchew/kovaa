@@ -1,6 +1,6 @@
 import type { Directive } from ".";
 
-export const on = ({ $el, arg, exp, $store, context, get }:Directive<HTMLElement> ) => {//, eventName: string, methodOrFunction: string, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
+export const on:Directive = ({ $el, arg, exp, $store, context, get }) => {//, eventName: string, methodOrFunction: string, $store: Record<string, any>, context:ReactiveElement<typeof $store>) => {
     const eventName = arg!.split(/@|:/)[1] as keyof HTMLElementEventMap
     // @ts-ignore
     const handler = exp in context && typeof context[exp] === 'function' ? 
