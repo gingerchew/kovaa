@@ -561,6 +561,29 @@ describe('@createApp', () => {
         el?.remove();
         expect(fn).toBeCalled();
     });
+    /**
+     * For some reason the effect is not being run both times,
+     * could this be an issue with the walk function?
+     */
+    it('should walk through the nodes properly', () => {
+        document.body.innerHTML = `<my-el>
+            <div id="0" x-effect="() => test()"></div>
+            <your-el>
+                <span></span>
+            </your-el>
+            <div id="1" x-effect="() => test()"></div>
+        </my-el>`
+
+        const test = vi.fn();
+
+        createApp({
+            test,
+            YourEl() {},
+            MyEl(){}
+        }).mount();
+
+        expect(test).toBeCalledTimes(2);
+    })
 
     it('should store effects on the proper element', () => {
         document.body.innerHTML = `<el-without-effects>
@@ -581,6 +604,7 @@ describe('@createApp', () => {
         const w = document.querySelector<ReactiveElement<{ name: string }>>('el-with-effects')!;
         const wo = document.querySelector<ReactiveElement<{ name: string }>>('el-without-effects')!;
         const w1 = document.querySelector<ReactiveElement<{ name: string }>>('el-with-one-effect')!;
+        console.log(wo.effects.map(e => e.effect.fn.toString()));
         expect(wo.effects.length).toBe(0);
         expect(w1.effects.length).toBe(1);
         expect(w.effects.length).toBe(2);
