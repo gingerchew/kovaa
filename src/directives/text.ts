@@ -1,6 +1,7 @@
 import type { Directive } from ".";
 
-export const text = <T extends HTMLElement>({ get,$el, effect }:Directive<T>) => {
+export const text = <T extends HTMLElement>({ arg, exp, get, $el, effect }:Directive<T>) => {
+    console.log({ arg, exp, name: $el.localName });
     effect(() => $el.textContent = toDisplayString(get()));
 }
 
