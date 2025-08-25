@@ -1,6 +1,5 @@
-import type { Directive } from ".";
 import { isArray } from "@vue/shared";
-
+import type { Directive } from "../types";
 export const model:Directive = ({ $el, get, exp, context, effect }) => {// (el: HTMLElement, _fullName: string, value:string, $store:Record<string, any>, context:ReactiveElement<typeof $store>) => {
     const assign = get(`(v) => { ${exp} = v }`);
     if ($el.tagName === 'SELECT') {

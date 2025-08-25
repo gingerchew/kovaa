@@ -1,9 +1,9 @@
 import { reactive, effect } from '@vue/reactivity';
 import { define } from './define';
-import { builtInDirectives, type Directive } from './directives';
+import { builtInDirectives } from './directives';
 import { toRawType } from '@vue/shared';
 import { toDisplayString } from './directives/text';
-
+import type { Directive } from './types';
 const createApp = (appObj: Record<string, any>) => {
     if (toRawType(appObj) !== 'Object') throw new Error('App definition must be an object');
 

@@ -1,5 +1,7 @@
 import type { ReactiveEffectRunner } from "@vue/reactivity";
 
+type Cleanup = () => void;
+
 type ReactiveElement<T> = {
     $store:T;
     #connected?: () => void;
@@ -7,7 +9,7 @@ type ReactiveElement<T> = {
     #attributeChanged?: (key:string, oldValue: any, newValue: any) => void;
     ac: AbortController;
     effects: ReactiveEffectRunner[];
-    cleanups: (() => void)[];
+    cleanups: Cleanup[];
 } & HTMLElement & {
     [Property in keyof T]: T[Property]
 }
@@ -38,5 +40,19 @@ type ComponentDefArgs<T extends Record<string, any>> = {
 } & {
     [Property in keyof T]: T[Property]
 }
+
+
+export type Directive<T = HTMLElement> = (arg: DirectiveConfig<T>) => void|Cleanup;
+
+export interface DirectiveConfig<T> {
+    get: (exp?: string) => any;
+    exp: string;
+    $store: $Store;
+    arg?: string;
+    $el:T;
+    effect: typeof effect;
+    context: ReactiveElement<$Store>
+}
+
 
 export { ReactiveElement, $Store, Component, ComponentDefinition, ComponentDefArgs }

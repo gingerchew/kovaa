@@ -1,4 +1,4 @@
-import type { Directive } from ".";
+import type { Directive } from "../types";
 
 export const text:Directive<HTMLElement> = ({ arg, exp, get, $el, effect }) => {
     console.log({ arg, exp, name: $el.localName });

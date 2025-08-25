@@ -1,4 +1,4 @@
-import type { Directive } from ".";
+import type { Directive } from "../types";
 
 export const xEffect:Directive = ({ get, exp, effect }) => {
     // Evaluating the function like this works because of with($store) 
