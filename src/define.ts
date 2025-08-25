@@ -6,8 +6,9 @@ import { effect } from '@vue/reactivity';
 import type { ReactiveEffectRunner } from "@vue/reactivity";
 import { css } from "./styles";
 
-const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
-    def = extend({ $tpl: null }, def);
+const processDefinition = <$s extends $Store>(defn: (config: ComponentDefArgs<$s>) => Component, config: ComponentDefArgs<$s>, el: ReactiveElement<$Store>) => {
+    const result = defn(config);
+    const def = extend<{ $tpl: null|DocumentFragment }, (typeof result)>({ $tpl: null }, defn(config));
     // If there is a tpl, 
     if (isString(def.$tpl)) {
         let tmp:HTMLTemplateElement;
@@ -74,13 +75,21 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 super();
 
                 definePropOrMethod(this, $store);
-                const scope = evaluate(this.getAttribute('x-scope') ?? '{}', $store);
 
                 // @TODO: Get $listen to support specifying an element to target and options
                 const $listen = (eventName:keyof HTMLElementEventMap, handler:EventListenerOrEventListenerObject, options?: AddEventListenerOptions) => this.addEventListener(eventName, handler, Object.assign({ capture: true, signal: ac.signal }, typeof options === 'boolean' ? { capture: options } : isObject(options) ? options : {}));
                 const $emit = (event:string, el?:HTMLElement) => (el ?? this).dispatchEvent(new CustomEvent(event));
+                const definitionConfig = { 
+                    ...evaluate(this.getAttribute('x-scope') ?? '{}', $store), 
+                    css: css(this),
+                    $: (selector:string) => this.querySelector(selector),
+                    $$: (selector:string) => [...this.querySelectorAll(selector)],
+                    $emit, 
+                    $listen
+                }
                 
-                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, ComponentDefArgs<typeof scope>[], Component>(this, [{ ...scope, css: css(this), $: (selector:string) => this.querySelector(selector), $$: (selector:string) => [...this.querySelectorAll(selector)], $emit, $listen }]), this);
+                const processedDefinition = processDefinition<typeof $store>(def.bind(this), definitionConfig, this);
+                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processedDefinition
                 
                 $connected = connected?.bind(this);
                 $disconnected = disconnected?.bind(this);
