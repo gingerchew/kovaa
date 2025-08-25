@@ -176,7 +176,7 @@ describe('@createApp', () => {
         const el = document.querySelector<ReactiveElement<{ name: string }>>('bind-directive')!;
         const span = document.querySelector('span')!;
         const div = document.querySelector('div')!;
-
+        
         expect(span.dataset.name).toBe(el.name);
         expect(div.dataset.name).toBe(el.name)
         // @ts-ignore
@@ -511,9 +511,11 @@ describe('@createApp', () => {
 
             }
         }).mount();
-
-        expect(document.body.children[0].children.length).toBe(1);
+        const htmlDirective = document.querySelector('html-directive')!;
+        const htmlChild = document.querySelector('html-child');
+        
         expect(document.getElementById('exists')).not.toBe(null)
+        expect(htmlDirective.children.length).toBe(1);
     });
 
     it('should have simple text templating', () => {
@@ -559,4 +561,28 @@ describe('@createApp', () => {
         el?.remove();
         expect(fn).toBeCalled();
     });
+
+    it('should store effects on the proper element', () => {
+        document.body.innerHTML = `<el-without-effects>
+            <el-with-effects>
+                <span x-text="name"></span>
+                <div x-html="'<div></div>'"></div>
+            </el-with-effects>
+            <el-with-one-effect x-text="name"></el-with-one-effect>
+        </el-without-effects>`
+
+        createApp({
+            name: 'Jane',
+            ElWithEffects() {},
+            ElWithoutEffects(){},
+            ElWithOneEffect() {},
+        }).mount();
+
+        const w = document.querySelector<ReactiveElement<{ name: string }>>('el-with-effects')!;
+        const wo = document.querySelector<ReactiveElement<{ name: string }>>('el-without-effects')!;
+        const w1 = document.querySelector<ReactiveElement<{ name: string }>>('el-with-one-effect')!;
+        expect(wo.effects.length).toBe(0);
+        expect(w1.effects.length).toBe(1);
+        expect(w.effects.length).toBe(2);
+    })
 });
