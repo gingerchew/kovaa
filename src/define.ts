@@ -2,6 +2,7 @@ import { toRawType } from "@vue/shared";
 import type { $Store, ReactiveElement, Component, ComponentDefinition, ComponentDefArgs } from "./types";
 import { evaluate, isComponent, KOVAA_SYMBOL, createFromTemplate, defineProp } from "./utils";
 import { createWalker } from "./walk";
+import { css } from "./styles";
 
 const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
     def = Object.assign({ $tpl: null }, def);
@@ -59,7 +60,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
             $store = $store;
             ac = new AbortController();
             [KOVAA_SYMBOL] = true;
-            
+
             constructor() {
                 super();
 
@@ -70,7 +71,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 const $listen = this.addEventListener.bind(this);
                 const $emit = (event:string, el?:HTMLElement) => (el ?? this).dispatchEvent(new CustomEvent(event));
                 
-                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, ComponentDefArgs<typeof scope>[], Component>(this, [{ ...scope, $: (selector:string) => this.querySelector(selector), $$: (selector:string) => [...this.querySelectorAll(selector)], $emit, $listen }]), this);
+                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, ComponentDefArgs<typeof scope>[], Component>(this, [{ ...scope, css: css.bind(this), $: (selector:string) => this.querySelector(selector), $$: (selector:string) => [...this.querySelectorAll(selector)], $emit, $listen }]), this);
                 
                 $connected = connected?.bind(this);
                 $disconnected = disconnected?.bind(this);
