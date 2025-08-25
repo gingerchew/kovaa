@@ -1,4 +1,4 @@
-import { isString } from "@vue/shared";
+import { extend, isFunction, isString } from "@vue/shared";
 import type { $Store, ReactiveElement, Component, ComponentDefinition, ComponentDefArgs } from "./types";
 import { evaluate, isComponent, KOVAA_SYMBOL, createFromTemplate, defineProp } from "./utils";
 import { createWalker } from "./walk";
@@ -6,7 +6,7 @@ import { effect } from '@vue/reactivity';
 import type { ReactiveEffectRunner } from "@vue/reactivity";
 
 const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
-    def = Object.assign({ $tpl: null }, def);
+    def = extend({ $tpl: null }, def);
     // If there is a tpl, 
     if (isString(def.$tpl)) {
         let tmp:HTMLTemplateElement;
@@ -35,10 +35,8 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
     for (const key of Object.keys($store)) {
         // Don't add components to other component classes
         if (isComponent(key, $store[key])) continue;
-        if (typeof $store[key] === 'function' || !isReactive) {
-            defineProp(instance, key, {
-                value: $store[key]
-            })
+        if (isFunction($store[key]) || !isReactive) {
+            defineProp(instance, key, $store[key])
         } else {
             defineProp(instance, key, {
                 get() { return $store[key] },
