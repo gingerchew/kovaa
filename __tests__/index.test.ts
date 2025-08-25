@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { createApp, effect, reactive } from '../src/index';
+import { createApp, effect } from '../src/index';
 import type { $Store, ReactiveElement } from '../src/types';
 
-describe('@createApp', () => {
+describe(() => {
     it('should fail if the passed object is invalid', () => {
-        
+
         // @ts-expect-error
         expect(() => createApp('test')).toThrowError('App definition must be an object');
         // @ts-expect-error
@@ -18,8 +18,8 @@ describe('@createApp', () => {
 
     it('should define custom elements if the key starts with a capital letter', () => {
         const app = createApp({
-            Button() {},
-            MyElement() {},
+            Button() { },
+            MyElement() { },
             reactiveProperty: 'Testing'
         });
 
@@ -39,14 +39,14 @@ describe('@createApp', () => {
                     this.name = 'John'
                 })
             },
-            El() {},
+            El() { },
             name: 'Jane',
         });
 
         app.mount();
 
         const el = document.querySelector<ReactiveElement<{ name: string }>>('x-el')!;
-        const button = document.querySelector<ReactiveElement<{name:string}>>('x-btn')!;
+        const button = document.querySelector<ReactiveElement<{ name: string }>>('x-btn')!;
 
         expect(el.name).toBe('Jane');
         expect(button.name).toBe('Jane');
@@ -67,7 +67,7 @@ describe('@createApp', () => {
                 effect(runner);
             }
         }
-        
+
         createApp(appDef).mount();
 
         expect(runner).toBeCalled();
@@ -75,16 +75,16 @@ describe('@createApp', () => {
 
     it('should run attributeChanged callback', () => {
         document.body.innerHTML = `<attribute-changed></attribute-changed>`;
-        
+
         const attributeChanged = vi.fn();
-        
+
         function AttributeChanged() {
             return {
                 attributeChanged
             }
         }
         AttributeChanged.$attrs = ['test'];
-        
+
         createApp({
             AttributeChanged
         }).mount();
@@ -134,25 +134,25 @@ describe('@createApp', () => {
     it('should handle prefixing', async () => {
         createApp({
             $prefix: 'prefix',
-            Button() {}
+            Button() { }
         }).mount()
-        
+
         expect(customElements.get('prefix-button')).not.toBe(undefined);
     });
 
-    it('should parse the x-scope attribute and be accessible in function',async () => {
+    it('should parse the x-scope attribute and be accessible in function', async () => {
         document.body.innerHTML = `<scope-parsing x-scope="{name:'Test'}"></scope-parsing>`
         let $scope;
         createApp({
             ScopeParsing({ name }: Record<string, string>) {
-                
-                
+
+
                 $scope = { name };
             }
         }).mount();
 
         await customElements.whenDefined('scope-parsing');
-        
+
         expect($scope).toStrictEqual({ name: 'Test' });
     })
 
@@ -176,7 +176,7 @@ describe('@createApp', () => {
         const el = document.querySelector<ReactiveElement<{ name: string }>>('bind-directive')!;
         const span = document.querySelector('span')!;
         const div = document.querySelector('div')!;
-        
+
         expect(span.dataset.name).toBe(el.name);
         expect(div.dataset.name).toBe(el.name)
         // @ts-ignore
@@ -340,7 +340,7 @@ describe('@createApp', () => {
         createApp({
             fname: 'Jill',
             SelectWrapper({ $emit, $ }) {
-                
+
                 return {
                     updateChoice() {
                         $('select').value = 'Jane'
@@ -355,7 +355,7 @@ describe('@createApp', () => {
         expect(wrapper.getAttribute('data-name')).toBe('Jill');
         // @ts-ignore
         wrapper.updateChoice();
-        
+
         expect(wrapper.getAttribute('data-name')).toBe('Jane');
     });
 
@@ -419,7 +419,7 @@ describe('@createApp', () => {
             <input type="radio" value="2" x-model="radio" />
         </radio-wrapper>`;
 
-        let radio:string = '1';
+        let radio: string = '1';
 
         createApp({
             radio,
@@ -478,7 +478,7 @@ describe('@createApp', () => {
 
         createApp({
             username: "Jane",
-            Text() {}
+            Text() { }
         }).mount();
 
         expect(inline.textContent).toBe('true');
@@ -491,7 +491,7 @@ describe('@createApp', () => {
 
         createApp({
             fn,
-            EffectDirective() {}
+            EffectDirective() { }
         }).mount();
 
         expect(fn).toBeCalled();
@@ -513,7 +513,7 @@ describe('@createApp', () => {
         }).mount();
         const htmlDirective = document.querySelector('html-directive')!;
         const htmlChild = document.querySelector('html-child');
-        
+
         expect(document.getElementById('exists')).not.toBe(null)
         expect(htmlDirective.children.length).toBe(1);
     });
@@ -522,7 +522,7 @@ describe('@createApp', () => {
         document.body.innerHTML = `<tpl-inline>{{name}}</tpl-inline>`;
         createApp({
             name: 'Test',
-            TplInline() {}
+            TplInline() { }
         }).mount();
         expect(document.body.children[0].textContent).toBe('Test');
     });
@@ -533,7 +533,7 @@ describe('@createApp', () => {
         </x-test>`
         const fn = vi.fn();
         const app = createApp({
-            Test() {}
+            Test() { }
         });
 
         app.directive('test', fn);
@@ -545,7 +545,7 @@ describe('@createApp', () => {
     it('should save directive cleanups to the cleanup property on the reactive element', () => {
         document.body.innerHTML = `<dir-with-cleanup x-cleanup></dir-with-cleanup>`
         const app = createApp({
-            DirWithCleanup() {}
+            DirWithCleanup() { }
         })
         const fn = vi.fn();
         const runsDirective = vi.fn();
@@ -578,8 +578,8 @@ describe('@createApp', () => {
 
         createApp({
             test,
-            YourEl() {},
-            MyEl(){}
+            YourEl() { },
+            MyEl() { }
         }).mount();
 
         expect(test).toBeCalledTimes(2);
@@ -596,17 +596,37 @@ describe('@createApp', () => {
 
         createApp({
             name: 'Jane',
-            ElWithEffects() {},
-            ElWithoutEffects(){},
-            ElWithOneEffect() {},
+            ElWithEffects() { },
+            ElWithoutEffects() { },
+            ElWithOneEffect() { },
         }).mount();
 
         const w = document.querySelector<ReactiveElement<{ name: string }>>('el-with-effects')!;
         const wo = document.querySelector<ReactiveElement<{ name: string }>>('el-without-effects')!;
         const w1 = document.querySelector<ReactiveElement<{ name: string }>>('el-with-one-effect')!;
-        
+
         expect(wo.effects.length).toBe(0);
         expect(w1.effects.length).toBe(1);
         expect(w.effects.length).toBe(2);
+        /**
+         * Waiting on support for CSSStyleSheet in JSDOM
+         * Should work though and can be tested manually
+         */
+    });
+    
+    it.todo('should add style sheets to the adopted stylesheets of respective contexts', () => {
+        document.body.innerHTML = `<with-shadowroot><template shadowrootmode="open"></template><with-shadowroot><to-document></to-document>`;
+
+        createApp({
+            WithShadowroot({ css }) {
+                css(`:host { color: red }`);
+            },
+            ToDocument({ css }) {
+                css(`:root { color: green }`);
+            }
+        }).mount();
+
+        expect(document.adoptedStyleSheets.length).toBe(1);
+        expect(document.querySelector('with-shadowroot')!.shadowRoot?.adoptedStyleSheets.length).toBe(1);
     })
 });
