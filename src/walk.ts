@@ -69,10 +69,8 @@ export const createWalker = (context: ReactiveElement<typeof $store>, $store: $S
 export const processDirective = ($el: HTMLElement | Node, arg: string, exp: string, $store: Record<string, any>, context: ReactiveElement<typeof $store>) => {
     const get = (e = exp) => evaluate(e, $store, $el, context);
     const token = arg[0];
-    let dir = token === ':' ? bind :
-        token === '@' ? on :
-        arg.match(/^x-bind:/) ? bind :
-        arg.match(/^x-on:/) ? on :
+    let dir = (token === ':' || arg.match(/^x-bind:/)) ? bind :
+        (token === '@' || arg.match(/^x-on:/)) ? on :
         builtInDirectives[arg.split('x-')[1]];
     
     const cleanup = dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, effect: context.effect.bind(context), get });
