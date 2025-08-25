@@ -1,8 +1,7 @@
 import { isObject } from "@vue/shared";
 import type { Directive } from "../types";
 
-export const text:Directive<HTMLElement> = ({ arg, exp, get, $el, effect }) => {
-    console.log({ arg, exp, name: $el.localName });
+export const text:Directive<HTMLElement> = ({ get, $el, effect }) => {
     effect(() => $el.textContent = toDisplayString(get()));
 }
 

@@ -20,7 +20,7 @@ const execute = (exp: string, $store: Record<string, any>, $el?: Node, $context?
     try {
         return fn($store, $context, $el);
     } catch(error) {
-        console.warn(`Failed to execute expression: ${exp}`);
+        import.meta.env.DEV && console.warn(`Failed to execute expression: ${exp}`);
         console.error(error);
     }
 }
