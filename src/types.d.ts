@@ -1,9 +1,13 @@
+import type { ReactiveEffectRunner } from "@vue/reactivity";
+
 type ReactiveElement<T> = {
     $store:T;
     #connected?: () => void;
     #disconnected?: () => void;
     #attributeChanged?: (key:string, oldValue: any, newValue: any) => void;
     ac: AbortController;
+    effects: ReactiveEffectRunner[];
+    cleanups: (() => void)[];
 } & HTMLElement & {
     [Property in keyof T]: T[Property]
 }
