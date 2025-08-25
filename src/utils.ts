@@ -1,3 +1,4 @@
+import { isFunction } from "@vue/shared";
 import type { $Store, ReactiveElement } from "./types";
 
 export const KOVAA_SYMBOL = Symbol()
@@ -24,12 +25,12 @@ const execute = (exp: string, $store: Record<string, any>, $el?: Node, $context?
     }
 }
 
-const isComponent = (key: string, value:string) => typeof value === 'function' && key[0].toUpperCase() === key[0];
+const isComponent = (key: string, value:string) => isFunction(value) && key[0].toUpperCase() === key[0];
 
 const isReactiveElement = (el:unknown): el is ReactiveElement<$Store> => el instanceof HTMLElement && KOVAA_SYMBOL in el;
 
 const createFromTemplate = (str: string, tmp = document.createElement('template')) => (tmp.innerHTML = str, tmp);
 
-const defineProp = (instance: object, key: string, config: object) => Object.defineProperty(instance, key, config);
+const defineProp = (instance: object, key: string, config: any) => Object.defineProperty(instance, key, typeof config !== 'object' ? { value: config } : config);
 
 export { evaluate, toFunction, isComponent, isReactiveElement, createFromTemplate, defineProp }
