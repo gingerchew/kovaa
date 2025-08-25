@@ -1,4 +1,4 @@
-import { toRawType } from "@vue/shared";
+import { isString } from "@vue/shared";
 import type { $Store, ReactiveElement, Component, ComponentDefinition, ComponentDefArgs } from "./types";
 import { evaluate, isComponent, KOVAA_SYMBOL, createFromTemplate, defineProp } from "./utils";
 import { createWalker } from "./walk";
@@ -8,13 +8,13 @@ import type { ReactiveEffectRunner } from "@vue/reactivity";
 const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
     def = Object.assign({ $tpl: null }, def);
     // If there is a tpl, 
-    if (toRawType(def.$tpl) === 'String') {
+    if (isString(def.$tpl)) {
         let tmp:HTMLTemplateElement;
         try {
-            tmp = (el.querySelector<HTMLTemplateElement>(def.$tpl as string)! ?? document.querySelector<HTMLTemplateElement>(def.$tpl as string)!);
+            tmp = el.querySelector(def.$tpl)! ?? document.querySelector<HTMLTemplateElement>(def.$tpl)!;
         } catch(e) {
             // if querySelector fails, assume def.$tpl is an html string
-            tmp = createFromTemplate(def.$tpl as string);
+            tmp = createFromTemplate(def.$tpl);
         }
 
         // if tmp is still null, assume it is a text string
@@ -58,6 +58,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
         // @ts-ignore
         customElements.define(localName, class extends HTMLElement implements ReactiveElement<$store> {
             static get observedAttributes() { return def.props; }
+            localName = localName;
             $store = $store;
             ac = new AbortController();
             [KOVAA_SYMBOL] = true;
