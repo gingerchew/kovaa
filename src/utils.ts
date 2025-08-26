@@ -1,12 +1,7 @@
+import { hasOwn, isFunction } from "@vue/shared";
 import type { $Store, ReactiveElement } from "./types";
 
 export const KOVAA_SYMBOL = Symbol()
-
-const makeLocalName = (s:string, prefix?: string) => {
-    let localName = `${prefix ? prefix + '-' : ''}${s.replace(/(.)([A-Z])/g, '$1-$2')}`.toLowerCase();
-
-    return localName.indexOf('-') < 0 ? `x-${localName}` : localName;
-}
 
 const fnCache = Object.create(null);
 const toFunction = (exp:string) => {
@@ -25,17 +20,17 @@ const execute = (exp: string, $store: Record<string, any>, $el?: Node, $context?
     try {
         return fn($store, $context, $el);
     } catch(error) {
-        console.warn(`Failed to execute expression: ${exp}`);
+        import.meta.env.DEV && console.warn(`Failed to execute expression: ${exp}`);
         console.error(error);
     }
 }
 
-const isComponent = (key: string, value:string) => typeof value === 'function' && key[0].toUpperCase() === key[0];
+const isComponent = (key: string, value:string) => isFunction(value) && key[0].toUpperCase() === key[0];
 
-const isReactiveElement = (el:unknown): el is ReactiveElement<$Store> => el instanceof HTMLElement && KOVAA_SYMBOL in el;
+const isReactiveElement = (el:unknown): el is ReactiveElement<$Store> => el instanceof HTMLElement && hasOwn(el, KOVAA_SYMBOL);
 
 const createFromTemplate = (str: string, tmp = document.createElement('template')) => (tmp.innerHTML = str, tmp);
 
-const defineProp = (instance: object, key: string, config: object) => Object.defineProperty(instance, key, config);
+const defineProp = (instance: object, key: string, config: any) => Object.defineProperty(instance, key, typeof config !== 'object' ? { value: config } : config);
 
-export { makeLocalName, evaluate, toFunction, isComponent, isReactiveElement, createFromTemplate, defineProp }
+export { evaluate, toFunction, isComponent, isReactiveElement, createFromTemplate, defineProp }

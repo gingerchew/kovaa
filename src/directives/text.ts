@@ -1,11 +1,12 @@
-import type { Directive } from ".";
+import { isObject } from "@vue/shared";
+import type { Directive } from "../types";
 
-export const text = <T extends HTMLElement>({ get,$el, effect }:Directive<T>) => {
+export const text:Directive<HTMLElement> = ({ get, $el, effect }) => {
     effect(() => $el.textContent = toDisplayString(get()));
 }
 
 export const toDisplayString = (str:unknown) => 
     str == null ? ''
-        : str !== null && typeof str === 'object' ?
+        : isObject(str) ?
             JSON.stringify(str)
         : String(str);

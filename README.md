@@ -121,14 +121,14 @@ function MyButton({ $listen }) {
         }
     }
 }
-MyButton.props = ['pressed']
+MyButton.$attrs = ['pressed']
 
 createApp({
     MyButton
 }).mount();
 ```
 
-When the custom element is defined, it will look if the `props` key is defined on the function and use that. When an attribute changes, it will use the `attributeChanged` method on the returned interface.
+When the custom element is defined, it will look if the `$attrs` key is defined on the function and use that. When an attribute changes, it will use the `attributeChanged` method on the returned interface.
 
 ## How do I add methods to my custom element?
 

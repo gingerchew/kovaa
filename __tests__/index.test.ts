@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
 import { createApp, effect } from '../src/index';
-import type { ReactiveElement } from '../src/types';
+import type { $Store, ReactiveElement } from '../src/types';
 
-describe('@createApp', () => {
+describe('kovaa', () => {
     it('should fail if the passed object is invalid', () => {
 
         // @ts-expect-error
@@ -83,7 +83,7 @@ describe('@createApp', () => {
                 attributeChanged
             }
         }
-        AttributeChanged.props = ['test'];
+        AttributeChanged.$attrs = ['test'];
 
         createApp({
             AttributeChanged
@@ -145,8 +145,6 @@ describe('@createApp', () => {
         let $scope;
         createApp({
             ScopeParsing({ name }: Record<string, string>) {
-
-
                 $scope = { name };
             }
         }).mount();
@@ -156,13 +154,13 @@ describe('@createApp', () => {
         expect($scope).toStrictEqual({ name: 'Test' });
     })
 
-    it('should support bind directive', () => {
+    it('should support bind directive', async () => {
         document.body.innerHTML = `<bind-directive>
             <span x-bind:data-name="name"></span>
             <div :data-name="name"></div>
         </bind-directive>`
 
-        createApp({
+        await createApp({
             name: 'Jill',
             BindDirective() {
                 return {
@@ -176,7 +174,7 @@ describe('@createApp', () => {
         const el = document.querySelector<ReactiveElement<{ name: string }>>('bind-directive')!;
         const span = document.querySelector('span')!;
         const div = document.querySelector('div')!;
-
+        
         expect(span.dataset.name).toBe(el.name);
         expect(div.dataset.name).toBe(el.name)
         // @ts-ignore
@@ -185,7 +183,7 @@ describe('@createApp', () => {
         expect(div.dataset.name).toBe(el.name);
     });
 
-    it('should support event listeners', () => {
+    it('should support event listeners', async () => {
         document.body.innerHTML = `<on-directive>
             <button @click="clickHandler"></button>
             <input @input="inputHandler" />
@@ -204,8 +202,10 @@ describe('@createApp', () => {
         const inputHandler = vi.fn();
         const globalInputHandler = vi.fn();
         const globalClickHandler = vi.fn();
+        
         let i = 0;
-        createApp({
+
+        await createApp({
             set i(v) {
                 i = v;
             },
@@ -221,7 +221,7 @@ describe('@createApp', () => {
                 }
             }
         }).mount();
-
+        
         input.dispatchEvent(new Event('input'));
         button.click();
         expect(clickHandler).toBeCalled();
@@ -329,7 +329,7 @@ describe('@createApp', () => {
         expect(span.dataset.name).toBe('Jill');
     });
 
-    it('should model select elements', () => {
+    it('should model select elements', async () => {
         document.body.innerHTML = `<select-wrapper :data-name="fname">
             <select x-model="fname">
                 <option>Jane</option>
@@ -337,7 +337,7 @@ describe('@createApp', () => {
             </select>
         </select-wrapper>`
 
-        createApp({
+        await createApp({
             fname: 'Jill',
             SelectWrapper({ $emit, $ }) {
 
@@ -359,14 +359,14 @@ describe('@createApp', () => {
         expect(wrapper.getAttribute('data-name')).toBe('Jane');
     });
 
-    it('should model input elements', () => {
+    it('should model input elements', async () => {
         document.body.innerHTML = `<input-wrapper>
             <input x-model="name" />
         </input-wrapper>`
 
         let name = '';
 
-        createApp({
+        await createApp({
             name: 'Jill',
             InputWrapper({ $listen, $emit, $ }) {
                 effect(() => {
@@ -386,7 +386,7 @@ describe('@createApp', () => {
     });
     // @TODO: Make sure this supports individual values as well
     // @TODO: Make sure this isn't as rigid
-    it('should model checkbox inputs', () => {
+    it('should model checkbox inputs', async () => {
         document.body.innerHTML = `<checkbox-wrapper>
             <input type="checkbox" name="check" value="1" x-model="check">
             <input type="checkbox" name="check" value="2" x-model="check">
@@ -395,7 +395,7 @@ describe('@createApp', () => {
 
         let check = [];
 
-        createApp({
+        await createApp({
             check: [],
             CheckboxWrapper({ $listen, $emit, $ }) {
                 effect(() => check = this.check);
@@ -413,7 +413,7 @@ describe('@createApp', () => {
         expect(check.length).toBe(1);
     });
 
-    it('should model radio inputs', () => {
+    it('should model radio inputs', async () => {
         document.body.innerHTML = `<radio-wrapper>
             <input type="radio" value="1" x-model="radio" selected />
             <input type="radio" value="2" x-model="radio" />
@@ -421,7 +421,7 @@ describe('@createApp', () => {
 
         let radio: string = '1';
 
-        createApp({
+        await createApp({
             radio,
             RadioWrapper() {
                 this.addEventListener('click', () => {
@@ -441,13 +441,13 @@ describe('@createApp', () => {
         expect(radio).toBe('2');
     });
 
-    it('should toggle display with show directive', () => {
+    it('should toggle display with show directive', async () => {
         document.body.innerHTML = `<show-directive>
             <div class="false" x-show="startsFalse"></div>
             <div class="true" x-show="startsTrue" style="display: flex;"></div>
         </show-directive>`
 
-        createApp({
+        await createApp({
             startsFalse: false,
             startsTrue: true,
             ShowDirective() {
@@ -467,7 +467,7 @@ describe('@createApp', () => {
         expect(t!.style.display).toBe('none');
     });
 
-    it('should add text with x-text directive', () => {
+    it('should add text with x-text directive', async () => {
         document.body.innerHTML = `<x-text>
             <div class="inline" x-text="'true'"></div>
             <div class="from-store" x-text="username"></div>
@@ -476,7 +476,7 @@ describe('@createApp', () => {
         const fromStore = document.querySelector<HTMLDivElement>('.from-store')!;
         const inline = document.querySelector<HTMLDivElement>('.inline')!;
 
-        createApp({
+        await createApp({
             username: "Jane",
             Text() { }
         }).mount();
@@ -485,11 +485,11 @@ describe('@createApp', () => {
         expect(fromStore.textContent).toBe('Jane');
     });
 
-    it('should run effects from directives', () => {
+    it('should run effects from directives', async () => {
         const fn = vi.fn();
         document.body.innerHTML = `<effect-directive x-effect="fn"></effect-directive>`;
 
-        createApp({
+        await createApp({
             fn,
             EffectDirective() { }
         }).mount();
@@ -497,12 +497,12 @@ describe('@createApp', () => {
         expect(fn).toBeCalled();
     });
 
-    it('should run x-html directive', () => {
+    it('should run x-html directive', async () => {
         document.body.innerHTML = `<html-directive x-html="'<div></div>'"></html-directive><html-child>
             <span x-html="testing"></span>
         </html-child>`;
 
-        createApp({
+        await createApp({
             testing: '<div id="exists"></div>',
             HtmlDirective() {
 
@@ -511,21 +511,25 @@ describe('@createApp', () => {
 
             }
         }).mount();
-
-        expect(document.body.children[0].children.length).toBe(1);
+        
+        const htmlDirective = document.querySelector('html-directive')!;
+        const htmlChild = document.querySelector('html-child');
+        
         expect(document.getElementById('exists')).not.toBe(null)
+        expect(htmlDirective.children.length).toBe(1);
     });
 
-    it('should have simple text templating', () => {
+    it('should have simple text templating', async () => {
         document.body.innerHTML = `<tpl-inline>{{name}}</tpl-inline>`;
-        createApp({
+        await createApp({
             name: 'Test',
             TplInline() { }
         }).mount();
+        
         expect(document.body.children[0].textContent).toBe('Test');
     });
 
-    it('should support custom directives', () => {
+    it('should support custom directives', async () => {
         document.body.innerHTML = `<x-test>
             <span x-test="1"></span>
         </x-test>`
@@ -535,18 +539,91 @@ describe('@createApp', () => {
         });
 
         app.directive('test', fn);
-        app.mount();
-
+        await app.mount();
+        
         expect(fn).toBeCalled();
     });
+
+    it('should save directive cleanups to the cleanup property on the reactive element',async () => {
+        document.body.innerHTML = `<dir-with-cleanup x-cleanup></dir-with-cleanup>`
+        const app = createApp({
+            DirWithCleanup() { }
+        })
+        const fn = vi.fn();
+        const runsDirective = vi.fn();
+        app.directive('cleanup', function cleanup() {
+            runsDirective();
+            return fn;
+        });
+        await app.mount();
+        const el = document.querySelector<ReactiveElement<$Store>>('dir-with-cleanup')!;
+        
+        expect(el.cleanups.length).toBe(1);
+        expect(runsDirective).toBeCalled();
+        expect(fn).not.toBeCalled();
+        el?.remove();
+        expect(fn).toBeCalled();
+    });
+    /**
+     * For some reason the effect is not being run both times,
+     * could this be an issue with the walk function?
+     */
+    it('should walk through the nodes properly', async () => {
+        document.body.innerHTML = `<my-el>
+            <div id="0" x-effect="() => test()"></div>
+            <your-el>
+                <span></span>
+            </your-el>
+            <div id="1" x-effect="() => test()"></div>
+        </my-el>`
+
+        const test = vi.fn();
+
+        await createApp({
+            test,
+            YourEl() { },
+            MyEl() { }
+        }).mount();
+        
+        expect(test).toBeCalledTimes(2);
+        
+    })
+
+    it('should store effects on the proper element', async () => {
+        document.body.innerHTML = `<el-without-effects>
+            <el-with-effects>
+                <span x-text="name"></span>
+                <div x-html="'<div></div>'"></div>
+            </el-with-effects>
+            <el-with-one-effect x-text="name"></el-with-one-effect>
+        </el-without-effects>`
+
+        await createApp({
+            name: 'Jane',
+            ElWithoutEffects() { },
+            ElWithEffects() { },
+            ElWithOneEffect() { },
+        }).mount();
+
+        const w = document.querySelector<ReactiveElement<{ name: string }>>('el-with-effects')!;
+        const wo = document.querySelector<ReactiveElement<{ name: string }>>('el-without-effects')!;
+        const w1 = document.querySelector<ReactiveElement<{ name: string }>>('el-with-one-effect')!;
+        console.log(w1.parentContext);
+        
+        expect(wo.effects.length).toBe(0);
+        expect(w1.effects.length).toBe(1);
+        expect(w.effects.length).toBe(2);
+    });
+    
+    
     /**
      * Waiting on support for CSSStyleSheet in JSDOM
      * Should work though and can be tested manually
      */
-    it.todo('should add style sheets to the adopted stylesheets of respective contexts', () => {
+    it.todo('should add style sheets to the adopted stylesheets of respective contexts', async () => {
         document.body.innerHTML = `<with-shadowroot><template shadowrootmode="open"></template><with-shadowroot><to-document></to-document>`;
 
-        createApp({
+        await createApp({
             WithShadowroot({ css }) {
                 css(`:host { color: red }`);
             },
@@ -555,6 +632,7 @@ describe('@createApp', () => {
             }
         }).mount();
 
+        
         expect(document.adoptedStyleSheets.length).toBe(1);
         expect(document.querySelector('with-shadowroot')!.shadowRoot?.adoptedStyleSheets.length).toBe(1);
     })

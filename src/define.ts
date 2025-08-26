@@ -1,19 +1,23 @@
-import { toRawType } from "@vue/shared";
+import { extend, isFunction, isObject, isString } from "@vue/shared";
 import type { $Store, ReactiveElement, Component, ComponentDefinition, ComponentDefArgs } from "./types";
 import { evaluate, isComponent, KOVAA_SYMBOL, createFromTemplate, defineProp } from "./utils";
 import { createWalker } from "./walk";
+import { effect } from '@vue/reactivity';
+import type { ReactiveEffectRunner } from "@vue/reactivity";
 import { css } from "./styles";
+import { notifier } from ".";
 
-const processDefinition = (def: Component, el: ReactiveElement<$Store>) => {
-    def = Object.assign({ $tpl: null }, def);
+const processDefinition = <$s extends $Store>(defn: (config: ComponentDefArgs<$s>) => Component, config: ComponentDefArgs<$s>, el: ReactiveElement<$Store>) => {
+    const result = defn(config);
+    const def = extend<{ $tpl: null|DocumentFragment }, (typeof result)>({ $tpl: null }, defn(config));
     // If there is a tpl, 
-    if (toRawType(def.$tpl) === 'String') {
+    if (isString(def.$tpl)) {
         let tmp:HTMLTemplateElement;
         try {
-            tmp = (el.querySelector<HTMLTemplateElement>(def.$tpl as string)! ?? document.querySelector<HTMLTemplateElement>(def.$tpl as string)!);
+            tmp = el.querySelector(def.$tpl)! ?? document.querySelector<HTMLTemplateElement>(def.$tpl)!;
         } catch(e) {
             // if querySelector fails, assume def.$tpl is an html string
-            tmp = createFromTemplate(def.$tpl as string);
+            tmp = createFromTemplate(def.$tpl);
         }
 
         // if tmp is still null, assume it is a text string
@@ -34,10 +38,8 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
     for (const key of Object.keys($store)) {
         // Don't add components to other component classes
         if (isComponent(key, $store[key])) continue;
-        if (typeof $store[key] === 'function' || !isReactive) {
-            defineProp(instance, key, {
-                value: $store[key]
-            })
+        if (isFunction($store[key]) || !isReactive) {
+            defineProp(instance, key, $store[key])
         } else {
             defineProp(instance, key, {
                 get() { return $store[key] },
@@ -50,42 +52,58 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
     }
 }
 
-
 const define = (localName:string, def: ComponentDefinition & (() => Component), $store: Record<string, any>) => {
-    let $connected: () => void, $disconnected: () => void, $attributeChanged: (key:string, o:any, n: any) => void;
     if (!customElements.get(localName)) {
+        let tpl: DocumentFragment|null, $connected: () => void, $disconnected: () => void, $attributeChanged: (key:string, o:any, n: any) => void, ac = new AbortController();
         // @ts-ignore
-        customElements.define(localName, class extends HTMLElement implements ReactiveElement<$store> {
-            static get observedAttributes() { return def.props; }
+        customElements.define(localName, class extends HTMLElement implements ReactiveElement<typeof $store> {
+            static get observedAttributes() { return def.$attrs; }
+            localName = localName;
+            parentContext?:ReactiveElement<$Store>;
             $store = $store;
-            ac = new AbortController();
+            ac = ac;
             [KOVAA_SYMBOL] = true;
-            
+            effects:ReactiveEffectRunner[] = [];
+            cleanups:(() => void)[] = [];
+            effect(fn: () => any) {
+                const e = effect(fn);
+                this.effects.push(e);
+                return e;
+            }
+
             constructor() {
                 super();
 
                 definePropOrMethod(this, $store);
-                const scope = evaluate(this.getAttribute('x-scope') ?? '{}', $store);
 
                 // @TODO: Get $listen to support specifying an element to target and options
-                const $listen = this.addEventListener.bind(this);
+                const $listen = (eventName:keyof HTMLElementEventMap, handler:EventListenerOrEventListenerObject, options?: AddEventListenerOptions) => this.addEventListener(eventName, handler, extend({ capture: true, signal: ac.signal }, typeof options === 'boolean' ? { capture: options } : isObject(options) ? options : {}));
                 const $emit = (event:string, el?:HTMLElement) => (el ?? this).dispatchEvent(new CustomEvent(event));
+                const definitionConfig = { 
+                    ...evaluate(this.getAttribute('x-scope') ?? '{}', $store), 
+                    css: css(this),
+                    $: (selector:string) => this.querySelector(selector),
+                    $$: (selector:string) => [...this.querySelectorAll(selector)],
+                    $emit, 
+                    $listen
+                }
                 
-                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processDefinition(def.apply<typeof this, ComponentDefArgs<typeof scope>[], Component>(this, [{ ...scope, css: css(this), $: (selector:string) => this.querySelector(selector), $$: (selector:string) => [...this.querySelectorAll(selector)], $emit, $listen }]), this);
-                
+                const processedDefinition = processDefinition<typeof $store>(def.bind(this), definitionConfig, this);
+                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processedDefinition
+                tpl = $tpl;
                 $connected = connected?.bind(this);
                 $disconnected = disconnected?.bind(this);
                 $attributeChanged = attributeChanged?.bind(this);
-
-                definePropOrMethod(this, methodsAndProps, false);
-    
-                if ($tpl) {
-                    this.append($tpl);
+                
+                if (tpl) {
+                    this.append(tpl);
                 }
 
-                createWalker(this, $store);
-            }
+                notifier.addEventListener('kovaa:alldefined', () => createWalker(this, $store));
 
+                definePropOrMethod(this, methodsAndProps, false);
+            }
+            
             connectedCallback() {
                 $connected?.();
             }
@@ -99,8 +117,9 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 // they will all have this signal attached to them
                 // and when the element is removed from the dom,
                 // they will be cleaned up
-                this.ac.abort();
+                ac.abort();
                 $disconnected?.();
+                this.cleanups.forEach(c => c());
             }
         });
     } else if (import.meta.env.DEV) {

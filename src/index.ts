@@ -1,25 +1,33 @@
 import { reactive, effect } from '@vue/reactivity';
 import { define } from './define';
-import { builtInDirectives, type Directive } from './directives';
-import { makeLocalName } from './utils';
-import { toRawType } from '@vue/shared';
+import { builtInDirectives } from './directives';
+import { isFunction, isObject } from '@vue/shared';
 import { toDisplayString } from './directives/text';
+import type { Directive } from './types';
+
+export const notifier = new EventTarget();
 
 const createApp = (appObj: Record<string, any>) => {
-    if (toRawType(appObj) !== 'Object') throw new Error('App definition must be an object');
-
+    if (!isObject(appObj)) throw new Error('App definition must be an object');
+    const $p = appObj.$prefix;
     appObj.$s = toDisplayString
 
     return {
-        mount() {
-            Object.keys(appObj).forEach(key => key[0] !== '$' &&
-                typeof appObj[key] === 'function' &&
-                key[0].toUpperCase() === key[0] &&
-                    define(makeLocalName(key, appObj.$prefix), appObj[key], reactive(appObj)))
+        mount: async () => {
+            const allDefined = Object.entries(appObj).map(([key, def]) => {
+                if (key[0] !== '$' && isFunction(def) && key[0].toUpperCase() === key[0]) {
+                    let localName = `${$p ? $p + '-' : ''}${key.replace(/(.)([A-Z])/g, '$1-$2')}`.toLowerCase();
+                    localName = localName.indexOf('-') < 0 ? `x-${localName}` : localName;
+                    define(localName, def, reactive(appObj))
+                    return customElements.whenDefined(localName)
+                }
+            });
+            await Promise.allSettled(allDefined);
+            notifier.dispatchEvent(new CustomEvent('kovaa:alldefined'));
         },
-        directive(key: string, dir: (config: Directive<HTMLElement>) => void) {
+        directive(key: string, dir:Directive) {
             builtInDirectives[key] = dir;
-        }
+        },
     }
 }
 

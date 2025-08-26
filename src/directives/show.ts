@@ -1,6 +1,6 @@
-import type { Directive } from ".";
+import type { Directive } from "../types";
 
-export const show = ({ $el, exp, context, effect }: Directive<HTMLElement>) => {
+export const show:Directive = ({ $el, exp, context, effect }) => {
     let initial = $el.style.display;
     effect(() => $el.style.display = context[exp] ? initial : 'none')
 }
