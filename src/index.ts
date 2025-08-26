@@ -25,9 +25,7 @@ const createApp = (appObj: Record<string, any>) => {
             await Promise.allSettled(allDefined);
             notifier.dispatchEvent(new CustomEvent(allDefinedEventName));
         },
-        directive(key: string, dir:Directive) {
-            builtInDirectives[key] = dir;
-        },
+        directive: (key: string, dir:Directive) => key in builtInDirectives ? builtInDirectives[key] : (builtInDirectives[key] = dir)
     }
 }
 
