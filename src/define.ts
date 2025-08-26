@@ -53,7 +53,7 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
 
 const define = (localName:string, def: ComponentDefinition & (() => Component), $store: Record<string, any>) => {
     if (!customElements.get(localName)) {
-        let tpl: DocumentFragment|null, $connected: () => void, $disconnected: () => void, $attributeChanged: (key:string, o:any, n: any) => void, ac = new AbortController();
+        let $connected: () => void, $disconnected: () => void, $attributeChanged: (key:string, o:any, n: any) => void, ac = new AbortController();
         // @ts-ignore
         customElements.define(localName, class extends HTMLElement implements ReactiveElement<typeof $store> {
             static get observedAttributes() { return def.$attrs; }
@@ -88,21 +88,17 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 }
                 
                 const processedDefinition = processDefinition<typeof $store>(def.bind(this), definitionConfig, this);
-                const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processedDefinition
-                
-                definePropOrMethod(this, methodsAndProps, false);
-                
-                tpl = $tpl;
+                const { connected, disconnected, attributeChanged, ...methodsAndProps } = processedDefinition
+
                 $connected = connected?.bind(this);
                 $disconnected = disconnected?.bind(this);
                 $attributeChanged = attributeChanged?.bind(this);
+
+                definePropOrMethod(this, methodsAndProps, false);
                 
-                if (tpl) {
-                    this.append(tpl);
-                }
+                if (processedDefinition.$tpl) this.append(processedDefinition.$tpl);
 
                 notifier.addEventListener(allDefinedEventName, () => createWalker(this, $store), { signal: ac.signal });
-
             }
             
             connectedCallback() {

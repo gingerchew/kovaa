@@ -1,4 +1,4 @@
-import { reactive, effect } from '@vue/reactivity';
+import { reactive } from '@vue/reactivity';
 import { define } from './define';
 import { builtInDirectives } from './directives';
 import { isFunction, isObject } from '@vue/shared';
@@ -6,9 +6,11 @@ import { toDisplayString } from './directives/text';
 import type { Directive } from './types';
 import { allDefinedEventName } from './utils';
 
+export { reactive, effect } from '@vue/reactivity';
+
 export const notifier = new EventTarget();
 
-const createApp = (appObj: Record<string, any>) => {
+export const createApp = (appObj: Record<string, any>) => {
     if (!isObject(appObj)) throw new Error('App definition must be an object');
     const $p = appObj.$prefix;
     appObj.$s = toDisplayString
@@ -27,10 +29,4 @@ const createApp = (appObj: Record<string, any>) => {
         },
         directive: (key: string, dir:Directive) => key in builtInDirectives ? builtInDirectives[key] : (builtInDirectives[key] = dir)
     }
-}
-
-export {
-    createApp,
-    reactive,
-    effect
 }
