@@ -12,5 +12,5 @@ export const on:Directive = ({ $el, arg, exp, $store, context, get }) => {//, ev
         get(`(e) => ${exp}`);
 
     // Use the abort controller from the context to clear it when the context element is removed
-    $el.addEventListener(eventName , handler, { signal: context.ac.signal })
+    $el.addEventListener(eventName , handler, { signal: context._ac.signal })
 }

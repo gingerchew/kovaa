@@ -16,21 +16,21 @@ describe('kovaa', () => {
         expect(createApp({})).toHaveProperty('mount');
     });
 
-    it('should define custom elements if the key starts with a capital letter', () => {
+    it('should define custom elements if the key starts with a capital letter', async() => {
         const app = createApp({
             Button() { },
             MyElement() { },
             reactiveProperty: 'Testing'
         });
 
-        app.mount();
+        await app.mount();
 
         expect(customElements.get('x-button')).not.toBe(undefined);
         expect(customElements.get('my-element')).not.toBe(undefined);
         expect(customElements.get('reactive-property')).toBe(undefined);
     });
 
-    it('should update reactive properties through the tree', () => {
+    it('should update reactive properties through the tree', async () => {
         document.body.innerHTML = `<x-el></x-el><x-btn></x-btn>`;
 
         const app = createApp({
@@ -43,7 +43,7 @@ describe('kovaa', () => {
             name: 'Jane',
         });
 
-        app.mount();
+        await app.mount();
 
         const el = document.querySelector<ReactiveElement<{ name: string }>>('x-el')!;
         const button = document.querySelector<ReactiveElement<{ name: string }>>('x-btn')!;
@@ -55,7 +55,7 @@ describe('kovaa', () => {
         expect(button.name).toBe('John');
     });
 
-    it('should run effects from inside component definitions', () => {
+    it('should run effects from inside component definitions', async () => {
         document.body.innerHTML = `<x-comp></x-comp>`;
 
         let runner;
@@ -68,12 +68,12 @@ describe('kovaa', () => {
             }
         }
 
-        createApp(appDef).mount();
+        await createApp(appDef).mount();
 
         expect(runner).toBeCalled();
     });
 
-    it('should run attributeChanged callback', () => {
+    it('should run attributeChanged callback', async () => {
         document.body.innerHTML = `<attribute-changed></attribute-changed>`;
 
         const attributeChanged = vi.fn();
@@ -85,7 +85,7 @@ describe('kovaa', () => {
         }
         AttributeChanged.$attrs = ['test'];
 
-        createApp({
+        await createApp({
             AttributeChanged
         }).mount();
 
@@ -95,7 +95,7 @@ describe('kovaa', () => {
         expect(attributeChanged).toBeCalled();
     });
 
-    it('should run disconnected callback', () => {
+    it('should run disconnected callback', async () => {
         document.body.innerHTML = `<x-disconnected></x-disconnected>`;
 
         const disconnected = vi.fn();
@@ -103,7 +103,7 @@ describe('kovaa', () => {
             return { disconnected };
         }
 
-        createApp({
+        await createApp({
             Disconnected
         }).mount();
 
@@ -112,12 +112,12 @@ describe('kovaa', () => {
         expect(disconnected).toBeCalled();
     })
 
-    it('should adopt methods and be accessible on the element', () => {
+    it('should adopt methods and be accessible on the element', async () => {
         document.body.innerHTML = '<has-methods></has-methods>'
 
         const testing = vi.fn();
 
-        createApp({
+        await createApp({
             HasMethods() {
                 return {
                     testing
@@ -132,7 +132,7 @@ describe('kovaa', () => {
     })
 
     it('should handle prefixing', async () => {
-        createApp({
+        await createApp({
             $prefix: 'prefix',
             Button() { }
         }).mount()
@@ -234,10 +234,10 @@ describe('kovaa', () => {
         expect(i).toBe(1);
     });
 
-    it('should adopt innerHTML from template elements', () => {
+    it('should adopt innerHTML from template elements', async () => {
         document.body.innerHTML = `<has-tpl></has-tpl><template id="tpl">true</template><has-tpl-child><template id="child">true</template></has-tpl-child>`;
 
-        createApp({
+        await createApp({
             HasTpl() {
                 return {
                     $tpl: '#tpl'
@@ -254,10 +254,10 @@ describe('kovaa', () => {
         expect(document.querySelector('has-tpl-child')?.textContent).toBe('true');
     })
 
-    it('should support inline html $tpl', () => {
+    it('should support inline html $tpl', async () => {
         document.body.innerHTML = '<has-inline-html></has-inline-html><has-inline-text></has-inline-text>';
 
-        createApp({
+        await createApp({
             HasInlineHtml() {
                 return {
                     $tpl: '<span>true</span>'
@@ -275,10 +275,10 @@ describe('kovaa', () => {
         expect(document.querySelector('has-inline-text')?.textContent).toBe('true');
     });
 
-    it('should have access to $store in $tpl', () => {
+    it('should have access to $store in $tpl', async () => {
         document.body.innerHTML = `<use-store-for-text></use-store-for-text><use-store-for-tpl></use-store-for-tpl><template id="test">true</template>`;
 
-        createApp({
+        await createApp({
             tpl: '#test',
             text: 'true',
             UseStoreForText() {
@@ -306,7 +306,7 @@ describe('kovaa', () => {
      * 
      * Currently it is pointless, I should research how petite-vue scope works a little more carefully
      */
-    it.todo('should maintain proper context across elements', () => {
+    it.todo('should maintain proper context across elements', async () => {
         document.body.innerHTML = `<parent-el x-scope="{name:'Jane'}">
             <child-el x-scope="{name:'Jill'}">
                 <span :data-name="name"></span>
@@ -314,7 +314,7 @@ describe('kovaa', () => {
             <div :data-name="name"></span>
         </parent-el>`;
 
-        createApp({
+        await createApp({
             ParentEl({ name }) {
                 this.name = name;
             },
@@ -557,10 +557,10 @@ describe('kovaa', () => {
         });
         await app.mount();
         const el = document.querySelector<ReactiveElement<$Store>>('dir-with-cleanup')!;
-        
-        expect(el.cleanups.length).toBe(1);
+        console.dir(el);
         expect(runsDirective).toBeCalled();
         expect(fn).not.toBeCalled();
+        expect(el._cleanups.length).toBe(1);
         el?.remove();
         expect(fn).toBeCalled();
     });
@@ -608,11 +608,10 @@ describe('kovaa', () => {
         const w = document.querySelector<ReactiveElement<{ name: string }>>('el-with-effects')!;
         const wo = document.querySelector<ReactiveElement<{ name: string }>>('el-without-effects')!;
         const w1 = document.querySelector<ReactiveElement<{ name: string }>>('el-with-one-effect')!;
-        console.log(w1.parentContext);
         
-        expect(wo.effects.length).toBe(0);
-        expect(w1.effects.length).toBe(1);
-        expect(w.effects.length).toBe(2);
+        expect(wo._effects.length).toBe(0);
+        expect(w1._effects.length).toBe(1);
+        expect(w._effects.length).toBe(2);
     });
     
     

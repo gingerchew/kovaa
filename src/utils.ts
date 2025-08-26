@@ -10,7 +10,7 @@ const toFunction = (exp:string) => {
     try {
         return new Function("$store", "$context", "$el", `with($store) { ${exp} }`);
     } catch(error) {
-        console.error(`${(error as Error).message} in expression: ${exp}`)
+        import.meta.env.DEV && console.error(`${(error as Error).message} in expression: ${exp}`)
         return () => {}
     }
 }
@@ -35,4 +35,4 @@ const createFromTemplate = (str: string, tmp = document.createElement('template'
 
 const defineProp = (instance: object, key: string, config: any) => Object.defineProperty(instance, key, typeof config !== 'object' ? { value: config } : config);
 
-export { evaluate, toFunction, isComponent, isReactiveElement, createFromTemplate, defineProp }
+export { evaluate, isComponent, isReactiveElement, createFromTemplate, defineProp }

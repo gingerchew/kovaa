@@ -4,13 +4,13 @@ type Cleanup = () => void;
 
 type ReactiveElement<T> = {
     $store:T;
-    parentContext?: ReactiveElement<$Store>
+    _parentContext?: ReactiveElement<$Store>
     #connected?: () => void;
     #disconnected?: () => void;
     #attributeChanged?: (key:string, oldValue: any, newValue: any) => void;
-    ac: AbortController;
-    effects: ReactiveEffectRunner[];
-    cleanups: Cleanup[];
+    _ac: AbortController;
+    _effects: ReactiveEffectRunner[];
+    _cleanups: Cleanup[];
 } & HTMLElement & {
     [Property in keyof T]: T[Property]
 }

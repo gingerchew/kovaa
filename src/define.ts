@@ -41,10 +41,10 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
             defineProp(instance, key, prop)
         } else {
             defineProp(instance, key, {
-                get() { return prop },
+                get() { return $store[key] },
                 set(v: typeof prop) {
                     // @ts-ignore
-                    prop = v
+                    $store[key] = v
                 }
             })
         }
@@ -58,15 +58,15 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
         customElements.define(localName, class extends HTMLElement implements ReactiveElement<typeof $store> {
             static get observedAttributes() { return def.$attrs; }
             localName = localName;
-            parentContext?:ReactiveElement<$Store>;
+            _parentContext?:ReactiveElement<$Store>;
             $store = $store;
-            ac = ac;
+            _ac = ac;
             [KOVAA_SYMBOL] = true;
-            effects:ReactiveEffectRunner[] = [];
-            cleanups:(() => void)[] = [];
+            _effects:ReactiveEffectRunner[] = [];
+            _cleanups:(() => void)[] = [];
             effect(fn: () => any) {
                 const e = effect(fn);
-                this.effects.push(e);
+                this._effects.push(e);
                 return e;
             }
 
@@ -120,7 +120,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 // they will be cleaned up
                 ac.abort();
                 $disconnected?.();
-                this.cleanups.forEach(c => c());
+                this._cleanups.forEach(c => c());
             }
         });
     } else if (import.meta.env.DEV) {
