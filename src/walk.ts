@@ -19,7 +19,7 @@ const parseNode = (node: Node, $store: $Store, context: ReactiveElement<typeof $
     if (node.nodeType === 1) {
         for (const attr of (node as HTMLElement).attributes) {
             // Don't bother processing attributes that aren't directives
-            if (attr.name.match(/(x-)|:|@/)) {
+            if (attr.name.match(/^(x-)|:|@/)) {
                 processDirective(node as HTMLElement, attr.name, attr.value, $store, context);
                 (node as HTMLElement).removeAttribute(attr.name)
             }

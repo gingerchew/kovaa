@@ -1,8 +1,8 @@
 import type { Directive } from "../types";
 
-export const xEffect:Directive = ({ get, exp, effect }) => {
+export const xEffect:Directive = ({ get, effect }) => {
     // Evaluating the function like this works because of with($store) 
     // might need to get this to work instead using with($context) to
     // make pull from the reactive element instead
-    effect(get(exp));
+    effect(get());
 }

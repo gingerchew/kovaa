@@ -4,6 +4,7 @@ import { builtInDirectives } from './directives';
 import { isFunction, isObject } from '@vue/shared';
 import { toDisplayString } from './directives/text';
 import type { Directive } from './types';
+import { allDefinedEventName } from './utils';
 
 export const notifier = new EventTarget();
 
@@ -18,12 +19,11 @@ const createApp = (appObj: Record<string, any>) => {
                 if (key[0] !== '$' && isFunction(def) && key[0].toUpperCase() === key[0]) {
                     let localName = `${$p ? $p + '-' : ''}${key.replace(/(.)([A-Z])/g, '$1-$2')}`.toLowerCase();
                     localName = localName.indexOf('-') < 0 ? `x-${localName}` : localName;
-                    define(localName, def, reactive(appObj))
-                    return customElements.whenDefined(localName)
+                    return define(localName, def, reactive(appObj))
                 }
             });
             await Promise.allSettled(allDefined);
-            notifier.dispatchEvent(new CustomEvent('kovaa:alldefined'));
+            notifier.dispatchEvent(new CustomEvent(allDefinedEventName));
         },
         directive(key: string, dir:Directive) {
             builtInDirectives[key] = dir;

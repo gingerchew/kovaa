@@ -3,6 +3,8 @@ import type { $Store, ReactiveElement } from "./types";
 
 export const KOVAA_SYMBOL = Symbol()
 
+export const allDefinedEventName = 'kovaa:alldefined' as const;
+
 const fnCache = Object.create(null);
 const toFunction = (exp:string) => {
     try {

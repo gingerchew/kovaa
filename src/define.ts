@@ -1,6 +1,6 @@
 import { extend, isFunction, isObject, isString } from "@vue/shared";
 import type { $Store, ReactiveElement, Component, ComponentDefinition, ComponentDefArgs } from "./types";
-import { evaluate, isComponent, KOVAA_SYMBOL, createFromTemplate, defineProp } from "./utils";
+import { evaluate, isComponent, KOVAA_SYMBOL, createFromTemplate, defineProp, allDefinedEventName } from "./utils";
 import { createWalker } from "./walk";
 import { effect } from '@vue/reactivity';
 import type { ReactiveEffectRunner } from "@vue/reactivity";
@@ -89,6 +89,9 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 
                 const processedDefinition = processDefinition<typeof $store>(def.bind(this), definitionConfig, this);
                 const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processedDefinition
+                
+                definePropOrMethod(this, methodsAndProps, false);
+                
                 tpl = $tpl;
                 $connected = connected?.bind(this);
                 $disconnected = disconnected?.bind(this);
@@ -98,9 +101,8 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                     this.append(tpl);
                 }
 
-                notifier.addEventListener('kovaa:alldefined', () => createWalker(this, $store));
+                notifier.addEventListener(allDefinedEventName, () => createWalker(this, $store), { signal: ac.signal });
 
-                definePropOrMethod(this, methodsAndProps, false);
             }
             
             connectedCallback() {
@@ -124,6 +126,8 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
     } else if (import.meta.env.DEV) {
         throw new Error(`Custom Element with name ${localName} has already been defined.`);
     }
+
+    return customElements.whenDefined(localName);
 }
 
 export { define };
