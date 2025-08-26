@@ -5,6 +5,7 @@ import { createWalker } from "./walk";
 import { effect } from '@vue/reactivity';
 import type { ReactiveEffectRunner } from "@vue/reactivity";
 import { css } from "./styles";
+import { notifier } from ".";
 
 const processDefinition = <$s extends $Store>(defn: (config: ComponentDefArgs<$s>) => Component, config: ComponentDefArgs<$s>, el: ReactiveElement<$Store>) => {
     const result = defn(config);
@@ -51,15 +52,14 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
     }
 }
 
-
 const define = (localName:string, def: ComponentDefinition & (() => Component), $store: Record<string, any>) => {
-    let $connected: () => void, $disconnected: () => void, $attributeChanged: (key:string, o:any, n: any) => void;
     if (!customElements.get(localName)) {
-        const ac = new AbortController();
+        let tpl: DocumentFragment|null, $connected: () => void, $disconnected: () => void, $attributeChanged: (key:string, o:any, n: any) => void, ac = new AbortController();
         // @ts-ignore
-        customElements.define(localName, class extends HTMLElement implements ReactiveElement<$store> {
+        customElements.define(localName, class extends HTMLElement implements ReactiveElement<typeof $store> {
             static get observedAttributes() { return def.$attrs; }
             localName = localName;
+            parentContext?:ReactiveElement<$Store>;
             $store = $store;
             ac = ac;
             [KOVAA_SYMBOL] = true;
@@ -77,7 +77,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 definePropOrMethod(this, $store);
 
                 // @TODO: Get $listen to support specifying an element to target and options
-                const $listen = (eventName:keyof HTMLElementEventMap, handler:EventListenerOrEventListenerObject, options?: AddEventListenerOptions) => this.addEventListener(eventName, handler, Object.assign({ capture: true, signal: ac.signal }, typeof options === 'boolean' ? { capture: options } : isObject(options) ? options : {}));
+                const $listen = (eventName:keyof HTMLElementEventMap, handler:EventListenerOrEventListenerObject, options?: AddEventListenerOptions) => this.addEventListener(eventName, handler, extend({ capture: true, signal: ac.signal }, typeof options === 'boolean' ? { capture: options } : isObject(options) ? options : {}));
                 const $emit = (event:string, el?:HTMLElement) => (el ?? this).dispatchEvent(new CustomEvent(event));
                 const definitionConfig = { 
                     ...evaluate(this.getAttribute('x-scope') ?? '{}', $store), 
@@ -90,20 +90,20 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 
                 const processedDefinition = processDefinition<typeof $store>(def.bind(this), definitionConfig, this);
                 const { $tpl, connected, disconnected, attributeChanged, ...methodsAndProps } = processedDefinition
-                
+                tpl = $tpl;
                 $connected = connected?.bind(this);
                 $disconnected = disconnected?.bind(this);
                 $attributeChanged = attributeChanged?.bind(this);
-
-                definePropOrMethod(this, methodsAndProps, false);
-    
-                if ($tpl) {
-                    this.append($tpl);
+                
+                if (tpl) {
+                    this.append(tpl);
                 }
 
-                createWalker(this, $store);
-            }
+                notifier.addEventListener('kovaa:alldefined', () => createWalker(this, $store));
 
+                definePropOrMethod(this, methodsAndProps, false);
+            }
+            
             connectedCallback() {
                 $connected?.();
             }

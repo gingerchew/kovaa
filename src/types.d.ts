@@ -4,6 +4,7 @@ type Cleanup = () => void;
 
 type ReactiveElement<T> = {
     $store:T;
+    parentContext?: ReactiveElement<$Store>
     #connected?: () => void;
     #disconnected?: () => void;
     #attributeChanged?: (key:string, oldValue: any, newValue: any) => void;

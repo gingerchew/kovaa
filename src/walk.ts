@@ -17,22 +17,16 @@ const textReplaceRegex = /\{\{([^]+?)\}\}/g;
 
 const parseNode = (node: Node, $store: $Store, context: ReactiveElement<typeof $store>) => {
     if (node.nodeType === 1) {
-        // it seems reactive elements are sometimes read as 
-        // plain HTMLElements thus not updating the context
-        // particularly this is for cases like two reactive elements
-        // next to each other
-        // console.log(node, node === context, isReactiveElement(node), (node as HTMLElement).localName);
-        // console.log(node, node === context);
-        const el = node as HTMLElement;
-        for (const attr of el.attributes) {
+        for (const attr of (node as HTMLElement).attributes) {
             // Don't bother processing attributes that aren't directives
             if (attr.name.match(/(x-)|:|@/)) {
-                processDirective(el, attr.name, attr.value, $store, context);
-                el.removeAttribute(attr.name)
+                processDirective(node as HTMLElement, attr.name, attr.value, $store, context);
+                (node as HTMLElement).removeAttribute(attr.name)
             }
         }
-    } else if (node.nodeType === 3 && (node as Text).data.indexOf(openingBracket) > -1) {
+    } else {
         const data = (node as Text).data;
+        if (data.indexOf(openingBracket) < 0) return node;
         let segments: string[] = [], lastIndex = 0;
         for (let match of data.matchAll(textReplaceRegex)) {
             const leading = data.slice(lastIndex, match.index);
@@ -45,35 +39,32 @@ const parseNode = (node: Node, $store: $Store, context: ReactiveElement<typeof $
         }
         processDirective(node, 'x-text', segments.join('+'), $store, context);
     }
+    return node;
 }
 
 export const createWalker = (context: ReactiveElement<typeof $store>, $store: $Store) => {
     const walker = document.createTreeWalker(context, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
-        acceptNode: (node) => [1, 3].includes(node.nodeType) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
+        acceptNode: (node) => [1,3].includes(node.nodeType) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
     });
-    parseNode(walker.currentNode, $store, context);
-    let node:Node|null = walker.currentNode;
-    while (node = walker.nextNode()) {
-        if (isReactiveElement(node) && !hasChanged(node, context)) {
-            if (!walker.currentNode.nextSibling) {
-                walker.parentNode();
-            }
-        } else {
-            parseNode(node, $store, context);
-        }
-    }
 
-    return walker;
+    let node: Node | null = parseNode(walker.currentNode, $store, context);;;
+
+    do {
+        if (isReactiveElement(node) && hasChanged(node, context)) {
+            node = walker.nextSibling() ?? walker.parentNode();
+        }
+
+        parseNode(node!, $store, context);
+    } while (node = walker.nextNode())
 }
 
 export const processDirective = ($el: HTMLElement | Node, arg: string, exp: string, $store: Record<string, any>, context: ReactiveElement<typeof $store>) => {
-    const get = (e = exp) => evaluate(e, $store, $el, context);
-    const token = arg[0];
+    const get = (e = exp) => evaluate(e, $store, $el, context), effect = context.effect.bind(context), [token] = arg;
     let dir = (token === ':' || arg.match(/^x-bind:/)) ? bind :
         (token === '@' || arg.match(/^x-on:/)) ? on :
-        builtInDirectives[arg.split('x-')[1]];
-    
-    const cleanup = dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, effect: context.effect.bind(context), get });
+            builtInDirectives[arg.split('x-')[1]];
+
+    const cleanup = dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, effect, get });
 
     if (cleanup) {
         context.cleanups.push(cleanup);

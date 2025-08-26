@@ -1,4 +1,4 @@
-import { isFunction } from "@vue/shared";
+import { hasOwn, isFunction } from "@vue/shared";
 import type { $Store, ReactiveElement } from "./types";
 
 export const KOVAA_SYMBOL = Symbol()
@@ -27,7 +27,7 @@ const execute = (exp: string, $store: Record<string, any>, $el?: Node, $context?
 
 const isComponent = (key: string, value:string) => isFunction(value) && key[0].toUpperCase() === key[0];
 
-const isReactiveElement = (el:unknown): el is ReactiveElement<$Store> => el instanceof HTMLElement && KOVAA_SYMBOL in el;
+const isReactiveElement = (el:unknown): el is ReactiveElement<$Store> => el instanceof HTMLElement && hasOwn(el, KOVAA_SYMBOL);
 
 const createFromTemplate = (str: string, tmp = document.createElement('template')) => (tmp.innerHTML = str, tmp);
 
