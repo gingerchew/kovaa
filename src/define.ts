@@ -13,7 +13,7 @@ const processDefinition = <T extends $Store>(defn: (config: ComponentDefArgs<T>)
     if (isString(def.$tpl)) {
         let tmp:HTMLTemplateElement;
         try {
-            tmp = el.querySelector(def.$tpl)! ?? document.querySelector<HTMLTemplateElement>(def.$tpl)!;
+            tmp = el.querySelector(def.$tpl)! ?? document.querySelector(def.$tpl)!;
         } catch(e) {
             // if querySelector fails, assume def.$tpl is an html string
             tmp = createFromTemplate(def.$tpl);
