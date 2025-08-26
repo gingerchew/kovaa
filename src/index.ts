@@ -18,10 +18,10 @@ export const createApp = (appObj: Record<string, any>) => {
     return {
         mount: async () => {
             const allDefined = Object.entries(appObj).map(([key, def]) => {
+                key = `${$p ? $p + '-' : ''}${key.replace(/(.)([A-Z])/g, '$1-$2')}`.toLowerCase();
                 if (key[0] !== '$' && isFunction(def) && key[0].toUpperCase() === key[0]) {
-                    let localName = `${$p ? $p + '-' : ''}${key.replace(/(.)([A-Z])/g, '$1-$2')}`.toLowerCase();
-                    localName = localName.indexOf('-') < 0 ? `x-${localName}` : localName;
-                    return define(localName, def, reactive(appObj))
+                    key = key.indexOf('-') < 0 ? `x-${key}` : key;
+                    return define(key, def, reactive(appObj))
                 }
             });
             await Promise.allSettled(allDefined);
