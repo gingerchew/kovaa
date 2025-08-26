@@ -5,10 +5,8 @@ import { isFunction, isObject } from '@vue/shared';
 import { toDisplayString } from './directives/text';
 import type { Directive } from './types';
 import { allDefinedEventName } from './utils';
-
+import { notifier } from './define';
 export { reactive, effect } from '@vue/reactivity';
-
-export const notifier = new EventTarget();
 
 export const createApp = (appObj: Record<string, any>) => {
     if (!isObject(appObj)) throw new Error('App definition must be an object');

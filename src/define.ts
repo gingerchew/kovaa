@@ -5,7 +5,8 @@ import { createWalker } from "./walk";
 import { effect } from '@vue/reactivity';
 import type { ReactiveEffectRunner } from "@vue/reactivity";
 import { css } from "./styles";
-import { notifier } from ".";
+
+export const notifier = new EventTarget();
 
 const processDefinition = <T extends $Store>(defn: (config: ComponentDefArgs<T>) => Component, config: ComponentDefArgs<T>, el: ReactiveElement<$Store>) => {
     const def = extend<{ $tpl: null|DocumentFragment }, ReturnType<typeof defn>>({ $tpl: null }, defn(config));
@@ -95,8 +96,8 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 $attributeChanged = attributeChanged?.bind(this);
 
                 definePropOrMethod(this, methodsAndProps, false);
-                
-                if (processedDefinition.$tpl) this.append(processedDefinition.$tpl);
+                // Saves a few bytes to append an empty string by default
+                this.append(processedDefinition.$tpl ?? '');
 
                 notifier.addEventListener(allDefinedEventName, () => createWalker(this, $store), { signal: ac.signal });
             }
