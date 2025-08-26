@@ -8,8 +8,7 @@ import { css } from "./styles";
 import { notifier } from ".";
 
 const processDefinition = <$s extends $Store>(defn: (config: ComponentDefArgs<$s>) => Component, config: ComponentDefArgs<$s>, el: ReactiveElement<$Store>) => {
-    const result = defn(config);
-    const def = extend<{ $tpl: null|DocumentFragment }, (typeof result)>({ $tpl: null }, defn(config));
+    const def = extend<{ $tpl: null|DocumentFragment }, ReturnType<typeof defn>>({ $tpl: null }, defn(config));
     // If there is a tpl, 
     if (isString(def.$tpl)) {
         let tmp:HTMLTemplateElement;
@@ -35,17 +34,17 @@ const processDefinition = <$s extends $Store>(defn: (config: ComponentDefArgs<$s
 }
 
 const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $store: T, isReactive = true) => {
-    for (const key of Object.keys($store)) {
+    for (let [key,prop] of Object.entries($store)) {
         // Don't add components to other component classes
-        if (isComponent(key, $store[key])) continue;
-        if (isFunction($store[key]) || !isReactive) {
-            defineProp(instance, key, $store[key])
+        if (isComponent(key, prop)) continue;
+        if (isFunction(prop) || !isReactive) {
+            defineProp(instance, key, prop)
         } else {
             defineProp(instance, key, {
-                get() { return $store[key] },
-                set(v: typeof $store[keyof typeof $store]) {
+                get() { return prop },
+                set(v: typeof prop) {
                     // @ts-ignore
-                    $store[key] = v;
+                    prop = v
                 }
             })
         }
