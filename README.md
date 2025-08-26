@@ -238,22 +238,6 @@ createApp({
 }).mount();
 ```
 
-On top of this, some utility functions are passed into the initial object:
-
-```js
-function MyButton({ $, $$, $listen, $emit, ...scope }) {
-    const span = $('span'); // this.querySelector('span');
-    const divArr = $$('div'); // HTMLDivElement[];
-    // If you use $listen to listen for events, 
-    // they are automatically cleaned up in
-    // in the `disconnectedCallback` using
-    // an `AbortController` signal
-    $listen('click', () => ...);
-    // dispatch events simply as needed
-    $emit('click');
-}
-```
-
 ## How do I bind data to attributes? What about event listeners?
 
 Kovaa supports the `:` symbol as a "bind" directive, as well as `x-bind:`, as well as `@` for event listeners.
@@ -312,6 +296,29 @@ Currently only `:`, `x-bind`, and `@` are supported. There are plans to continue
 ## What about custom directives?
 
 Custom directives are not supported currently. This will likely come after all the existing petite-vue directives are added.
+
+## What if I don't want to use directives?
+
+Kovaa offers some utility functions that can be used instead of directives.
+
+```js
+function MyButton({ $, $$, $listen, $emit, ...scope, css }) {
+    const span = $('span'); // this.querySelector('span');
+    const divArr = $$('div'); // HTMLDivElement[];
+    // If you use $listen to listen for events, 
+    // they are automatically cleaned up in
+    // in the `disconnectedCallback` using
+    // an `AbortController` signal
+    $listen('click', () => ...);
+    // dispatch events simply as needed
+    $emit('click');
+    // if there is no shadowRoot, styles are added to the document
+    css(`:root { color: red }`)
+    // if there is, it is added to the shadow root
+    this.attachShadow({ mode: 'open' });
+    css(`:host { color: red }`);
+}
+```
 
 
 ## TODO
