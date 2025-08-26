@@ -7,7 +7,7 @@ import type { ReactiveEffectRunner } from "@vue/reactivity";
 import { css } from "./styles";
 import { notifier } from ".";
 
-const processDefinition = <$s extends $Store>(defn: (config: ComponentDefArgs<$s>) => Component, config: ComponentDefArgs<$s>, el: ReactiveElement<$Store>) => {
+const processDefinition = <T extends $Store>(defn: (config: ComponentDefArgs<T>) => Component, config: ComponentDefArgs<T>, el: ReactiveElement<$Store>) => {
     const def = extend<{ $tpl: null|DocumentFragment }, ReturnType<typeof defn>>({ $tpl: null }, defn(config));
     // If there is a tpl, 
     if (isString(def.$tpl)) {

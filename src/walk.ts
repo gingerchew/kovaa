@@ -15,7 +15,7 @@ const xif = (el: HTMLElement, fullName:string, value:string, $store:Record<strin
 const openingBracket = "{{";
 const textReplaceRegex = /\{\{([^]+?)\}\}/g;
 
-const parseNode = (node: Node, $store: $Store, context: ReactiveElement<typeof $store>) => {
+const parseNode = <T extends $Store>(node: Node, $store: T, context: ReactiveElement<T>) => {
     if (node.nodeType === 1) {
         for (const attr of (node as HTMLElement).attributes) {
             // Don't bother processing attributes that aren't directives
@@ -42,7 +42,7 @@ const parseNode = (node: Node, $store: $Store, context: ReactiveElement<typeof $
     return node;
 }
 
-export const createWalker = (context: ReactiveElement<typeof $store>, $store: $Store) => {
+export const createWalker = <T extends $Store>(context: ReactiveElement<T>, $store: T) => {
     const walker = document.createTreeWalker(context, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
         acceptNode: (node) => [1,3].includes(node.nodeType) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
     });
