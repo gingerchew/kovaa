@@ -33,8 +33,25 @@ const isReactiveElement = (el:unknown): el is ReactiveElement<$Store> => el inst
 
 const createFromTemplate = (str: string, tmp = document.createElement('template')) => (tmp.innerHTML = str, tmp);
 
-const defineProp = (instance: object, key: string, config: any) => Object.defineProperty(instance, key, typeof config !== 'object' ? { value: config } : config);
+const defineProp = (instance: object, key: string, config: any) => Object.defineProperty(instance, key, config);
 
+const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $store: T, isReactive = true) => {
+    for (let [key,prop] of Object.entries($store)) {
+        // Don't add components to other component classes
+        if (isComponent(key, prop)) continue;
+        if (isFunction(prop) || !isReactive) {
+            defineProp(instance, key, { value: prop })
+        } else {
+            defineProp(instance, key, {
+                get() { return $store[key] },
+                set(v: typeof prop) {
+                    // @ts-ignore
+                    $store[key] = v
+                }
+            })
+        }
+    }
+}
 
 const processDefinition = <T extends $Store>(defn: (config: ComponentDefArgs<T>) => Component, config: ComponentDefArgs<T>, el: ReactiveElement<$Store>) => {
     const def = extend<{ $tpl: null|DocumentFragment }, ReturnType<typeof defn>>({ $tpl: null }, defn(config));
@@ -61,24 +78,5 @@ const processDefinition = <T extends $Store>(defn: (config: ComponentDefArgs<T>)
     }
     return def;
 }
-
-const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $store: T, isReactive = true) => {
-    for (let [key,prop] of Object.entries($store)) {
-        // Don't add components to other component classes
-        if (isComponent(key, prop)) continue;
-        if (isFunction(prop) || !isReactive) {
-            defineProp(instance, key, { value: prop })
-        } else {
-            defineProp(instance, key, {
-                get() { return $store[key] },
-                set(v: typeof prop) {
-                    // @ts-ignore
-                    $store[key] = v
-                }
-            })
-        }
-    }
-}
-
 
 export { evaluate, isReactiveElement, definePropOrMethod, processDefinition }
