@@ -48,7 +48,6 @@ export const createWalker = <T extends $Store>(context: ReactiveElement<T>, $sto
     });
 
     let node: Node | null = parseNode(walker.currentNode, $store, context);
-
     do {
         if (isReactiveElement(node) && hasChanged(node, context)) {
             node = walker.nextSibling() ?? walker.parentNode();

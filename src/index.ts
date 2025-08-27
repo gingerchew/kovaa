@@ -16,8 +16,8 @@ export const createApp = (appObj: Record<string, any>) => {
     return {
         mount: async () => {
             const allDefined = Object.entries(appObj).map(([key, def]) => {
-                key = `${$p ? $p + '-' : ''}${key.replace(/(.)([A-Z])/g, '$1-$2')}`.toLowerCase();
                 if (key[0] !== '$' && isFunction(def) && key[0].toUpperCase() === key[0]) {
+                    key = `${$p ? $p + '-' : ''}${key.replace(/(.)([A-Z])/g, '$1-$2')}`.toLowerCase();
                     key = key.indexOf('-') < 0 ? `x-${key}` : key;
                     return define(key, def, reactive(appObj))
                 }

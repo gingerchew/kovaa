@@ -1,5 +1,5 @@
-import { hasOwn, isFunction } from "@vue/shared";
-import type { $Store, ReactiveElement } from "./types";
+import { extend, hasOwn, isFunction, isString } from "@vue/shared";
+import type { $Store, Component, ComponentDefArgs, ReactiveElement } from "./types";
 
 export const KOVAA_SYMBOL = Symbol()
 
@@ -35,4 +35,50 @@ const createFromTemplate = (str: string, tmp = document.createElement('template'
 
 const defineProp = (instance: object, key: string, config: any) => Object.defineProperty(instance, key, typeof config !== 'object' ? { value: config } : config);
 
-export { evaluate, isComponent, isReactiveElement, createFromTemplate, defineProp }
+
+const processDefinition = <T extends $Store>(defn: (config: ComponentDefArgs<T>) => Component, config: ComponentDefArgs<T>, el: ReactiveElement<$Store>) => {
+    const def = extend<{ $tpl: null|DocumentFragment }, ReturnType<typeof defn>>({ $tpl: null }, defn(config));
+    // If there is a tpl, 
+    if (isString(def.$tpl)) {
+        let tmp:HTMLTemplateElement;
+        try {
+            tmp = el.querySelector(def.$tpl)! ?? document.querySelector(def.$tpl)!;
+        } catch(e) {
+            // if querySelector fails, assume def.$tpl is an html string
+            tmp = createFromTemplate(def.$tpl);
+        }
+
+        // if tmp is still null, assume it is a text string
+        if (tmp === null) {
+            import.meta.env.DEV && console.warn(`Could not find element with selector ${def.$tpl} falling back to using as template`);
+            tmp = createFromTemplate(def.$tpl as string);
+        }
+        
+        def.$tpl = tmp.content.cloneNode(true) as DocumentFragment;
+    } 
+    if (def.$tpl instanceof HTMLTemplateElement) {
+        def.$tpl = def.$tpl.content.cloneNode(true) as DocumentFragment;
+    }
+    return def;
+}
+
+const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $store: T, isReactive = true) => {
+    for (let [key,prop] of Object.entries($store)) {
+        // Don't add components to other component classes
+        if (isComponent(key, prop)) continue;
+        if (isFunction(prop) || !isReactive) {
+            defineProp(instance, key, { value: prop })
+        } else {
+            defineProp(instance, key, {
+                get() { return $store[key] },
+                set(v: typeof prop) {
+                    // @ts-ignore
+                    $store[key] = v
+                }
+            })
+        }
+    }
+}
+
+
+export { evaluate, isReactiveElement, definePropOrMethod, processDefinition }
