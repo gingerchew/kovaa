@@ -26,18 +26,19 @@ const parseNode = <T extends $Store>(node: Node, $store: T, context: ReactiveEle
         }
     } else {
         const data = (node as Text).data;
-        if (data.indexOf(openingBracket) < 0) return node;
-        let segments: string[] = [], lastIndex = 0;
-        for (let match of data.matchAll(textReplaceRegex)) {
-            const leading = data.slice(lastIndex, match.index);
-            if (leading) segments.push(JSON.stringify(leading));
-            segments.push(`$s(${match[1]})`);
-            lastIndex = match.index + match[0].length;
+        if (data.indexOf(openingBracket) > -1) {
+            let segments: string[] = [], lastIndex = 0;
+            for (let match of data.matchAll(textReplaceRegex)) {
+                const leading = data.slice(lastIndex, match.index);
+                if (leading) segments.push(JSON.stringify(leading));
+                segments.push(`$s(${match[1]})`);
+                lastIndex = match.index + match[0].length;
+            }
+            if (lastIndex < data.length) {
+                segments.push(data.slice(lastIndex));
+            }
+            processDirective(node, 'x-text', segments.join('+'), $store, context);
         }
-        if (lastIndex < data.length) {
-            segments.push(data.slice(lastIndex));
-        }
-        processDirective(node, 'x-text', segments.join('+'), $store, context);
     }
     return node;
 }
