@@ -27,6 +27,8 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 return e;
             }
 
+            $refs = {};
+
             constructor() {
                 super();
 
@@ -35,13 +37,15 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 // @TODO: Get $listen to support specifying an element to target and options
                 const $listen = (eventName:keyof HTMLElementEventMap, handler:EventListenerOrEventListenerObject, options?: AddEventListenerOptions) => this.addEventListener(eventName, handler, extend({ capture: true, signal: ac.signal }, typeof options === 'boolean' ? { capture: options } : isObject(options) ? options : {}));
                 const $emit = (event:string, el?:HTMLElement) => (el ?? this).dispatchEvent(new CustomEvent(event));
+                const $ = (selector: string):HTMLElement|null => this.querySelector<HTMLElement>(selector);
+                
                 const definitionConfig = { 
                     ...evaluate(this.getAttribute('x-scope') ?? '{}', $store), 
                     css: css(this),
-                    $: (selector:string) => this.querySelector(selector),
-                    $$: (selector:string) => [...this.querySelectorAll(selector)],
+                    $,
+                    $$: (selector:string):HTMLElement[] => [...this.querySelectorAll<HTMLElement>(selector)],
                     $emit, 
-                    $listen
+                    $listen,
                 }
                 
                 const processedDefinition = processDefinition<typeof $store>(def.bind(this), definitionConfig, this);

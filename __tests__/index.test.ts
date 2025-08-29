@@ -634,5 +634,18 @@ describe('kovaa', () => {
         
         expect(document.adoptedStyleSheets.length).toBe(1);
         expect(document.querySelector('with-shadowroot')!.shadowRoot?.adoptedStyleSheets.length).toBe(1);
+    });
+
+    it('should store refs from the dom', async () => {
+        document.body.innerHTML = `<has-refs>
+            <div ref="testing"></div>
+        </has-refs>`
+
+        await createApp({
+            HasRefs() {}
+        }).mount();
+        const el = document.querySelector<ReactiveElement<$Store>>('has-refs')!;
+        console.log(el.$refs);
+        expect(document.querySelector<ReactiveElement<$Store>>('has-refs')!.$refs.testing).not.toBe(undefined);
     })
 });

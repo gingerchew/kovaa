@@ -4,6 +4,7 @@ import { bind } from './directives/bind';
 import { on } from './directives/on';
 import { builtInDirectives } from './directives';
 import { hasChanged } from '@vue/shared';
+import { ref } from './directives/ref';
 
 /*
 const xif = (el: HTMLElement, fullName:string, value:string, $store:Record<string, any>, context: ReactiveElement) => {
@@ -19,7 +20,7 @@ const parseNode = <T extends $Store>(node: Node, $store: T, context: ReactiveEle
     if (node.nodeType === 1) {
         for (const attr of (node as HTMLElement).attributes) {
             // Don't bother processing attributes that aren't directives
-            if (attr.name.match(/^(x-)|:|@/)) {
+            if (attr.name.match(/^(x-)|:|@|(ref)/)) {
                 processDirective(node as HTMLElement, attr.name, attr.value, $store, context);
                 (node as HTMLElement).removeAttribute(attr.name)
             }
@@ -62,7 +63,8 @@ const processDirective = ($el: HTMLElement | Node, arg: string, exp: string, $st
     const get = (e = exp) => evaluate(e, $store, $el, context), 
         effect = context.effect.bind(context), 
         [token] = arg,
-        dir = (token === ':' || arg.match(/^x-bind:/)) ? bind :
+        dir = arg === 'ref' ? ref :
+            (token === ':' || arg.match(/^x-bind:/)) ? bind :
             (token === '@' || arg.match(/^x-on:/)) ? on :
                 builtInDirectives[arg.split('x-')[1]],
         cleanup = dir?.({ $el: $el as unknown as HTMLElement, arg, exp, $store, context, effect, get });
