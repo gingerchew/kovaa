@@ -79,4 +79,4 @@ const processDefinition = <T extends $Store>(defn: (config: ComponentDefArgs<T>)
     return def;
 }
 
-export { evaluate, isReactiveElement, definePropOrMethod, processDefinition }
+export { evaluate, isReactiveElement, definePropOrMethod, processDefinition, defineProp, isComponent }

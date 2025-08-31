@@ -1,10 +1,10 @@
 import { extend, isObject } from "@vue/shared";
-import type { $Store, ReactiveElement, Component, ComponentDefinition } from "./types";
+import type { $Store, ReactiveElement, Component, ComponentDefinition, EffectResult, Cleanup } from "./types";
 import { evaluate, KOVAA_SYMBOL, allDefinedEventName, definePropOrMethod, processDefinition } from "./utils";
 import { createWalker } from "./walk";
-import { effect } from '@vue/reactivity';
-import type { ReactiveEffectRunner } from "@vue/reactivity";
+import { effect } from './reactivity/effect';
 import { css } from "./styles";
+import { toDisplayString } from "./directives/text";
 
 export const notifier = new EventTarget();
 
@@ -19,26 +19,26 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
             $store = $store;
             _ac = ac;
             [KOVAA_SYMBOL] = true;
-            _effects:ReactiveEffectRunner[] = [];
+            _effects: EffectResult[] = [];
             _cleanups:(() => void)[] = [];
-            effect(fn: () => any) {
+            effect(fn: () => Cleanup) {
                 const e = effect(fn);
                 this._effects.push(e);
                 return e;
             }
-
+            $s = toDisplayString
             $refs = {};
 
             constructor() {
                 super();
 
                 definePropOrMethod(this, $store);
-
+                
                 // @TODO: Get $listen to support specifying an element to target and options
                 const $listen = (eventName:keyof HTMLElementEventMap, handler:EventListenerOrEventListenerObject, options?: AddEventListenerOptions) => this.addEventListener(eventName, handler, extend({ capture: true, signal: ac.signal }, typeof options === 'boolean' ? { capture: options } : isObject(options) ? options : {}));
                 const $emit = (event:string, el?:HTMLElement) => (el ?? this).dispatchEvent(new CustomEvent(event));
                 const $ = (selector: string):HTMLElement|null => this.querySelector<HTMLElement>(selector);
-                
+                const effect = this.effect.bind(this);
                 const definitionConfig = { 
                     ...evaluate(this.getAttribute('x-scope') ?? '{}', $store), 
                     css: css(this),
@@ -46,6 +46,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                     $$: (selector:string):HTMLElement[] => [...this.querySelectorAll<HTMLElement>(selector)],
                     $emit, 
                     $listen,
+                    effect
                 }
                 
                 const processedDefinition = processDefinition<typeof $store>(def.bind(this), definitionConfig, this);
@@ -77,6 +78,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 // they will be cleaned up
                 ac.abort();
                 $disconnected?.();
+                this._effects.forEach(e => e.cleanup())
                 this._cleanups.forEach(c => c());
             }
         });

@@ -1,7 +1,10 @@
-import type { ReactiveEffectRunner } from "@vue/reactivity";
+import type { Signal } from "signal-polyfill";
 
-type Cleanup = () => void;
-
+export type Cleanup = () => void;
+export type EffectResult = {
+    cleanup: Cleanup;
+    computed: Signal.Computed
+}
 type ReactiveElement<T> = {
     $store:T;
     _parentContext?: ReactiveElement<$Store>
@@ -9,8 +12,9 @@ type ReactiveElement<T> = {
     #disconnected?: () => void;
     #attributeChanged?: (key:string, oldValue: any, newValue: any) => void;
     _ac: AbortController;
-    _effects: ReactiveEffectRunner[];
+    _effects: EffectResult[];
     _cleanups: Cleanup[];
+    effect: (fn: () => Cleanup) => EffectResult;
 } & HTMLElement & {
     [Property in keyof T]: T[Property]
 }

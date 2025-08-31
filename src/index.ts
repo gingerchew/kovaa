@@ -1,17 +1,16 @@
-import { reactive } from '@vue/reactivity';
+import { reactive } from './reactivity/reactive';
 import { define } from './define';
 import { builtInDirectives } from './directives';
 import { isFunction, isObject } from '@vue/shared';
-import { toDisplayString } from './directives/text';
 import type { Directive } from './types';
 import { allDefinedEventName } from './utils';
 import { notifier } from './define';
-export { reactive, effect } from '@vue/reactivity';
+export { effect } from './reactivity/effect';
+export { reactive };
 
 export const createApp = (appObj: Record<string, any>) => {
     if (!isObject(appObj)) throw new Error('App definition must be an object');
     const $p = appObj.$prefix;
-    appObj.$s = toDisplayString
 
     return {
         mount: async () => {

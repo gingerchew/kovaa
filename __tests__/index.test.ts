@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
-import { createApp, effect } from '../src/index';
+import { createApp } from '../src/index';
 import type { $Store, ReactiveElement } from '../src/types';
 
 describe('kovaa', () => {
@@ -62,7 +62,7 @@ describe('kovaa', () => {
 
         const appDef = {
             i: 0,
-            Comp() {
+            Comp({ effect }) {
                 runner = vi.fn(() => this.$store.i += 1);
                 effect(runner);
             }
@@ -368,7 +368,7 @@ describe('kovaa', () => {
 
         await createApp({
             name: 'Jill',
-            InputWrapper({ $listen, $emit, $ }) {
+            InputWrapper({ $listen, $emit, $, effect }) {
                 effect(() => {
                     name = this.name;
                 });
@@ -397,7 +397,7 @@ describe('kovaa', () => {
 
         await createApp({
             check: [],
-            CheckboxWrapper({ $listen, $emit, $ }) {
+            CheckboxWrapper({ $listen, $emit, $, effect }) {
                 effect(() => check = this.check);
                 $listen('click', () => {
                     const secondCheck = $('[value="2"]')!;
@@ -423,7 +423,7 @@ describe('kovaa', () => {
 
         await createApp({
             radio,
-            RadioWrapper() {
+            RadioWrapper({ effect }) {
                 this.addEventListener('click', () => {
                     this.querySelector('input:last-child')?.click();
                 });

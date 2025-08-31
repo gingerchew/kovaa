@@ -34,7 +34,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "coverage": "vitest run --coverage",
-    "knip":"pnpx knip"
+    "knip": "pnpx knip"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "3.2.4",
@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "@vue/reactivity": "^3.5.18",
-    "@vue/shared": "^3.5.18"
+    "@vue/shared": "^3.5.18",
+    "signal-polyfill": "^0.2.2"
   }
 }
