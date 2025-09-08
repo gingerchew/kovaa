@@ -21,7 +21,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
             [KOVAA_SYMBOL] = true;
             _effects: EffectResult[] = [];
             _cleanups:(() => void)[] = [];
-            effect(fn: () => Cleanup) {
+            effect = (fn: () => Cleanup) => {
                 const e = effect(fn);
                 this._effects.push(e);
                 return e;
@@ -38,12 +38,14 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 const $listen = (eventName:keyof HTMLElementEventMap, handler:EventListenerOrEventListenerObject, options?: AddEventListenerOptions) => this.addEventListener(eventName, handler, extend({ capture: true, signal: ac.signal }, typeof options === 'boolean' ? { capture: options } : isObject(options) ? options : {}));
                 const $emit = (event:string, el?:HTMLElement) => (el ?? this).dispatchEvent(new CustomEvent(event));
                 const $ = (selector: string):HTMLElement|null => this.querySelector<HTMLElement>(selector);
-                const effect = this.effect.bind(this);
+                const $$ = (selector:string):HTMLElement[] => [...this.querySelectorAll<HTMLElement>(selector)];
+                const effect = this.effect;
+                
                 const definitionConfig = { 
                     ...evaluate(this.getAttribute('x-scope') ?? '{}', $store), 
                     css: css(this),
                     $,
-                    $$: (selector:string):HTMLElement[] => [...this.querySelectorAll<HTMLElement>(selector)],
+                    $$,
                     $emit, 
                     $listen,
                     effect
