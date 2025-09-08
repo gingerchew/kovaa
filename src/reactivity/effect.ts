@@ -7,7 +7,6 @@ export function effect(callback: () => (Cleanup|void)) {
     let cleanup: Cleanup | undefined;
 
     const computed = new Signal.Computed(() => {
-        console.log(cleanup);
         isFunction(cleanup) && cleanup()
         const result = callback();
         if (result) {

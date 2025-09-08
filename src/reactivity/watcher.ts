@@ -1,4 +1,5 @@
 import { Signal } from "signal-polyfill";
+
 let needsEnqueue = true;
 
 const $w = new Signal.subtle.Watcher(() => {
@@ -14,7 +15,7 @@ function processPending() {
     for (const s of $w.getPending()) {
         s.get();
     }
-
+    
     $w.watch();
 }
 
