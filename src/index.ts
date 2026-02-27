@@ -1,12 +1,10 @@
-import { reactive } from './reactivity/reactive';
 import { define } from './define';
 import { builtInDirectives } from './directives';
 import { isFunction, isObject } from '@vue/shared';
 import type { Directive } from './types';
 import { allDefinedEventName } from './utils';
 import { notifier } from './define';
-export { effect } from './reactivity/effect';
-export { reactive };
+export { effect, signal } from '@preact/signals-core';
 
 export const createApp = (appObj: Record<string, any>) => {
     if (!isObject(appObj)) throw new Error('App definition must be an object');
@@ -18,7 +16,7 @@ export const createApp = (appObj: Record<string, any>) => {
                 if (key[0] !== '$' && isFunction(def) && key[0].toUpperCase() === key[0]) {
                     key = `${$p ? $p + '-' : ''}${key.replace(/(.)([A-Z])/g, '$1-$2')}`.toLowerCase();
                     key = key.indexOf('-') < 0 ? `x-${key}` : key;
-                    return define(key, def, reactive(appObj))
+                    return define(key, def, appObj)
                 }
             });
             await Promise.allSettled(allDefined);

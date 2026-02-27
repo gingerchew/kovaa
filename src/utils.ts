@@ -1,5 +1,6 @@
 import { extend, hasOwn, isFunction, isString } from "@vue/shared";
 import type { $Store, Component, ComponentDefArgs, ReactiveElement } from "./types";
+import { signal } from "@preact/signals-core";
 
 export const KOVAA_SYMBOL = Symbol()
 
@@ -42,13 +43,11 @@ const definePropOrMethod = <T extends $Store>(instance: ReactiveElement<T>, $sto
         if (isFunction(prop) || !isReactive) {
             defineProp(instance, key, { value: prop })
         } else {
+            const s = signal($store[key]);
             defineProp(instance, key, {
-                get() { return $store[key] },
-                set(v: typeof prop) {
-                    // @ts-ignore
-                    $store[key] = v
-                }
-            })
+                get() { return s.value },
+                set(v: typeof prop) { s.value = v }
+        }   )
         }
     }
 }

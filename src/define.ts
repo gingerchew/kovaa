@@ -1,29 +1,28 @@
 import { extend, isObject } from "@vue/shared";
-import type { $Store, ReactiveElement, Component, ComponentDefinition, EffectResult, Cleanup } from "./types";
+import type { $Store, ReactiveElement, ComponentDefinition, EffectFn, Cleanup } from "./types";
 import { evaluate, KOVAA_SYMBOL, allDefinedEventName, definePropOrMethod, processDefinition } from "./utils";
 import { createWalker } from "./walk";
-import { effect } from './reactivity/effect';
+import { effect } from '@preact/signals-core';
 import { css } from "./styles";
 import { toDisplayString } from "./directives/text";
 
 export const notifier = new EventTarget();
 
-const define = (localName:string, def: ComponentDefinition & (() => Component), $store: Record<string, any>) => {
+const define = (localName:string, def: ComponentDefinition, $store: Record<string, any>) => {
     if (!customElements.get(localName)) {
         let $connected: () => void, $disconnected: () => void, $attributeChanged: (key:string, o:any, n: any) => void, ac = new AbortController();
         // @ts-ignore
         customElements.define(localName, class extends HTMLElement implements ReactiveElement<typeof $store> {
-            static get observedAttributes() { return def.$attrs; }
+            static observedAttributes = def.$attrs;
             localName = localName;
             _parentContext?:ReactiveElement<$Store>;
             $store = $store;
             _ac = ac;
             [KOVAA_SYMBOL] = true;
-            _effects: EffectResult[] = [];
-            _cleanups:(() => void)[] = [];
-            effect = (fn: () => Cleanup) => {
+            _cleanups:Cleanup[] = [];
+            effect = (fn: EffectFn) => {
                 const e = effect(fn);
-                this._effects.push(e);
+                this._cleanups.push(e);
                 return e;
             }
             $s = toDisplayString
@@ -39,7 +38,6 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 const $emit = (event:string, el?:HTMLElement) => (el ?? this).dispatchEvent(new CustomEvent(event));
                 const $ = (selector: string):HTMLElement|null => this.querySelector<HTMLElement>(selector);
                 const $$ = (selector:string):HTMLElement[] => [...this.querySelectorAll<HTMLElement>(selector)];
-                const effect = this.effect;
                 
                 const definitionConfig = { 
                     ...evaluate(this.getAttribute('x-scope') ?? '{}', $store), 
@@ -48,7 +46,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                     $$,
                     $emit, 
                     $listen,
-                    effect
+                    effect: this.effect
                 }
                 
                 const processedDefinition = processDefinition<typeof $store>(def.bind(this), definitionConfig, this);
@@ -80,8 +78,7 @@ const define = (localName:string, def: ComponentDefinition & (() => Component), 
                 // they will be cleaned up
                 ac.abort();
                 $disconnected?.();
-                this._effects.forEach(e => e.cleanup())
-                this._cleanups.forEach(c => c());
+                this._cleanups.forEach(c => c?.());
             }
         });
     } else if (import.meta.env.DEV) {

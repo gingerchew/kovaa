@@ -1,43 +1,45 @@
-import type { Signal } from "signal-polyfill";
 
-export type Cleanup = () => void;
+import { effect } from "@preact/signals-core";
+
+export type Cleanup = ReturnType<EffectFn>
+
 export type EffectResult = {
     cleanup: Cleanup;
     computed: Signal.Computed
 }
-type ReactiveElement<T> = {
+
+export type ReactiveElement<T> = {
     $store:T;
     _parentContext?: ReactiveElement<$Store>
     #connected?: () => void;
     #disconnected?: () => void;
     #attributeChanged?: (key:string, oldValue: any, newValue: any) => void;
     _ac: AbortController;
-    _effects: EffectResult[];
     _cleanups: Cleanup[];
-    effect: (fn: () => Cleanup) => EffectResult;
+    effect: (fn: EffectFn) => Cleanup;
 } & HTMLElement & {
     [Property in keyof T]: T[Property]
 }
 
-type ComponentDefinition = {
+export type ComponentDefinition = ((componentDefArgs:ComponentDefArgs) => Component) & {
     $attrs: string[]
 }
 
-interface Component {
+export interface Component {
     $tpl: null|string|HTMLTemplateElement|DocumentFragment;
     connected: () => void;
     disconnected: () => void;
     attributeChanged: (key: string, oldValue: any, newValue: any) => void;
 }
 
-type $Store = Record<string, any>;
+export type $Store = Record<string, any>;
 
-type $listen = {
+export type $listen = {
     <K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
     (type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
 }
 
-type ComponentDefArgs<T extends Record<string, any>> = {
+export type ComponentDefArgs<T extends Record<string, any>> = {
     $: ReturnType<typeof $>;
     $$: ReturnType<typeof $$>;
     $listen: $listen;
@@ -51,13 +53,13 @@ export type Directive<T = HTMLElement> = (arg: DirectiveConfig<T>) => void|Clean
 
 export interface DirectiveConfig<T> {
     get: (exp?: string) => any;
+    effect: ReactiveElement<$Store>['effect'];
     exp: string;
     $store: $Store;
     arg?: string;
     $el:T;
-    effect: typeof effect;
     context: ReactiveElement<$Store>
 }
 
 
-export { ReactiveElement, $Store, Component, ComponentDefinition, ComponentDefArgs }
+export type EffectFn = Parameters<typeof effect>[0];
